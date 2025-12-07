@@ -5,255 +5,413 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Simple Secure File Share 3.1.0\n"
+"Project-Id-Version: Simple Secure File Share 3.1.1\n"
 "Report-Msgid-Bugs-To: https://lichiphen.com\n"
-"POT-Creation-Date: 2025-12-07 21:00:00+0900\n"
-"PO-Revision-Date: 2025-12-07 21:00:00+0900\n"
-"Last-Translator: Lichiphen <contact@example.com>\n"
+"POT-Creation-Date: 2025-12-08 02:10:00+0900\n"
+"PO-Revision-Date: 2025-12-08 02:10:00+0900\n"
+"Last-Translator: Lichiphen <contact@lichiphen.com>\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit\n"
 
-#: simple-file-share.php
+#: simple-file-share.php (menu)
 msgid "File Share"
 msgstr "ファイル共有"
 
-#: simple-file-share.php
 msgid "Advanced Settings"
 msgstr "高度な設定"
 
-#: simple-file-share.php
 msgid "How to Use"
 msgstr "使い方"
 
-#: simple-file-share.php
+#: simple-file-share.php (admin page)
+msgid "Secure File Sharing System"
+msgstr "安全なファイル共有システム"
+
 msgid "Create New Share"
-msgstr "新規共有作成"
+msgstr "新規共有を作成"
 
-#: simple-file-share.php
-msgid "Share Title"
-msgstr "共有タイトル"
+msgid "Share Title (for management)"
+msgstr "共有タイトル（管理用）"
 
-#: simple-file-share.php
-msgid "Enter a title for the share"
-msgstr "共有リンクに名前をつけてください"
+msgid "Example: Documents for Mr./Ms. XX"
+msgstr "例：○○様への資料"
 
-#: simple-file-share.php
 msgid "Password Protection"
 msgstr "パスワード保護"
 
-#: simple-file-share.php
 msgid "None"
 msgstr "なし"
 
-#: simple-file-share.php
 msgid "Yes"
 msgstr "あり"
 
-#: simple-file-share.php
 msgid "Enter password"
 msgstr "パスワードを入力"
 
-#: simple-file-share.php
+msgid "Show password"
+msgstr "パスワードを表示"
+
 msgid "Auto Generate"
 msgstr "自動生成"
 
-#: simple-file-share.php
+msgid "* Password will be copied to clipboard when you click the auto-generate button."
+msgstr "※自動生成ボタンを押すとパスワードがクリップボードにコピーされます。"
+
 msgid "File Selection"
 msgstr "ファイル選択"
 
-#: simple-file-share.php
 msgid "Drag and drop files here"
-msgstr "ファイルをここにドラッグ＆ドロップ"
+msgstr "ここにファイルをドラッグ＆ドロップ"
 
-#: simple-file-share.php
-msgid "or click to select files"
-msgstr "またはクリックしてファイルを選択"
+msgid "or"
+msgstr "または"
 
-#: simple-file-share.php
+msgid "click to select files"
+msgstr "クリックしてファイルを選択"
+
+msgid "Files waiting to upload:"
+msgstr "アップロード待ちのファイル："
+
+msgid "Clear all"
+msgstr "クリア"
+
+msgid "Uploading..."
+msgstr "アップロード中..."
+
 msgid "Upload and Create Share Link"
 msgstr "アップロードして共有リンクを作成"
 
-#: simple-file-share.php
 msgid "Active Share Links"
 msgstr "有効な共有リンク一覧"
 
-#: simple-file-share.php
 msgid "No shared files yet."
-msgstr "まだ共有されたファイルはありません。"
+msgstr "共有ファイルはまだありません。"
 
-#: simple-file-share.php
 msgid "Title"
 msgstr "タイトル"
 
-#: simple-file-share.php
 msgid "Status"
 msgstr "ステータス"
 
-#: simple-file-share.php
 msgid "Share URL"
 msgstr "共有URL"
 
-#: simple-file-share.php
 msgid "Files"
-msgstr "ファイル数"
+msgstr "ファイル"
 
-#: simple-file-share.php
 msgid "DL Count"
 msgstr "DL数"
 
-#: simple-file-share.php
 msgid "Created"
 msgstr "作成日"
 
-#: simple-file-share.php
 msgid "Actions"
 msgstr "操作"
 
-#: simple-file-share.php
 msgid "Locked"
-msgstr "鍵付き"
+msgstr "ロック"
 
-#: simple-file-share.php
 msgid "Public"
 msgstr "公開"
 
-#: simple-file-share.php
 msgid "Copy"
 msgstr "コピー"
 
-#: simple-file-share.php
+msgid "Are you sure you want to delete? Uploaded files will also be deleted."
+msgstr "本当に削除しますか？アップロードしたファイルも削除されます。"
+
 msgid "Delete"
 msgstr "削除"
 
-#: simple-file-share.php
-msgid "Are you sure you want to delete? Uploaded files will also be deleted."
-msgstr "本当に削除しますか？アップロードされたファイルも削除されます。"
-
-#: simple-file-share.php
 msgid "Upload Complete!"
 msgstr "アップロード完了！"
 
-#: simple-file-share.php
 msgid "Files have been saved securely and a share link has been created."
-msgstr "ファイルが安全に保存され、共有リンクが作成されました。"
+msgstr "ファイルは安全に保存され、共有リンクが作成されました。"
 
-#: simple-file-share.php
+msgid "Refresh List"
+msgstr "一覧を更新"
+
 msgid "URL copied!"
 msgstr "URLをコピーしました！"
 
-#: simple-file-share.php
+msgid "Copy failed"
+msgstr "コピー失敗"
+
 msgid "Password copied!"
 msgstr "パスワードをコピーしました！"
 
-#: simple-file-share.php
+#: simple-file-share.php (password form)
 msgid "Password Authentication"
 msgstr "パスワード認証"
 
-#: simple-file-share.php
 msgid "Password Protected Area"
-msgstr "パスワード保護領域"
+msgstr "パスワード保護されたエリア"
 
-#: simple-file-share.php
 msgid "A password is required to access this content."
-msgstr "にアクセスするにはパスワードが必要です。"
+msgstr "このコンテンツにアクセスするにはパスワードが必要です。"
 
-#: simple-file-share.php
 msgid "Incorrect password."
 msgstr "パスワードが正しくありません。"
 
-#: simple-file-share.php
-msgid "Authenticate and View Files"
-msgstr "認証してファイルを閲覧"
-
-#: simple-file-share.php
-msgid "Download as ZIP"
-msgstr "ZIPでダウンロード"
-
-#: simple-file-share.php
-msgid "File List"
-msgstr "ファイル一覧"
-
-#: simple-file-share.php
-msgid "Invalid access. Please download from the share page."
-msgstr "不正なアクセスです。共有ページからダウンロードしてください。"
-
-#: simple-file-share.php
-msgid "Access Denied"
-msgstr "アクセス拒否"
-
-#: simple-file-share.php
-msgid "Registered Shares"
-msgstr "登録済み共有数"
-
-#: simple-file-share.php
-msgid "Upload Folders"
-msgstr "アップロードフォルダ数"
-
-#: simple-file-share.php
-msgid "Orphan Folders"
-msgstr "孤立フォルダ数"
-
-#: simple-file-share.php
-msgid "Orphan Records"
-msgstr "孤立レコード数"
-
-#: simple-file-share.php
-msgid "Orphan folders found"
-msgstr "孤立フォルダが見つかりました"
-
-#: simple-file-share.php
-msgid "These folders are not registered in the database."
-msgstr "以下のフォルダはデータベースに登録されていません。"
-
-#: simple-file-share.php
-msgid "Delete Orphan Folders"
-msgstr "孤立フォルダを削除"
-
-#: simple-file-share.php
-msgid "Orphan records found"
-msgstr "孤立レコードが見つかりました"
-
-#: simple-file-share.php
-msgid "These database records have no corresponding files."
-msgstr "以下のデータベースレコードには対応するファイルフォルダがありません。"
-
-#: simple-file-share.php
-msgid "Delete Orphan Records"
-msgstr "孤立レコードを削除"
-
-#: simple-file-share.php
-msgid "No issues found"
-msgstr "問題は見つかりませんでした"
-
-#: simple-file-share.php
-msgid "Database and file system are properly synchronized."
-msgstr "データベースとファイルシステムは正常に同期されています。"
-
-#: simple-file-share.php
-msgid "Database Share List"
-msgstr "データベース内の共有情報一覧"
-
-#: simple-file-share.php
-msgid "Token"
-msgstr "トークン"
-
-#: simple-file-share.php
-msgid "File Exists"
-msgstr "ファイル有無"
-
-#: simple-file-share.php
 msgid "Password"
 msgstr "パスワード"
 
-#: simple-file-share.php
+msgid "Authenticate and View Files"
+msgstr "認証してファイルを表示"
+
+#: simple-file-share.php (frontend share page)
+msgid "File Sharing"
+msgstr "ファイル共有"
+
+msgid "files"
+msgstr "ファイル"
+
+msgid "Total"
+msgstr "合計"
+
+msgid "Download as ZIP"
+msgstr "ZIPでダウンロード"
+
+msgid "Download File"
+msgstr "ファイルをダウンロード"
+
+msgid "If you have any questions, please feel free to contact us."
+msgstr "ご不明な点がございましたらお気軽にお問い合わせください。"
+
+msgid "Invalid access. Please download from the share page."
+msgstr "不正なアクセスです。共有ページからダウンロードしてください。"
+
+msgid "Access Denied"
+msgstr "アクセス拒否"
+
+#: simple-file-share.php (advanced settings page)
+msgid "On this page, you can check and manage the consistency of the plugin database and files."
+msgstr "このページでは、プラグインのデータベースとファイルの整合性を確認・管理できます。"
+
+msgid "* Warning: Cleanup operations cannot be undone."
+msgstr "※注意：クリーンアップ操作は元に戻せません。"
+
+msgid "Registered Shares"
+msgstr "登録済み共有数"
+
+msgid "Upload Folders"
+msgstr "アップロードフォルダ数"
+
+msgid "Orphan Folders"
+msgstr "孤立フォルダ数"
+
+msgid "Orphan Records"
+msgstr "孤立レコード数"
+
+msgid "Orphan folders exist. Files exist on server but are not registered in database."
+msgstr "孤立フォルダがあります。サーバーにファイルがありますが、データベースに登録されていません。"
+
+msgid "Orphan folder(s):"
+msgstr "孤立フォルダ："
+
+msgid "Are you sure you want to delete orphan folders? This cannot be undone."
+msgstr "孤立フォルダを削除しますか？この操作は元に戻せません。"
+
+msgid "Delete Orphan Folders"
+msgstr "孤立フォルダを削除"
+
+msgid "Orphan records exist. Registered in database but actual files do not exist."
+msgstr "孤立レコードがあります。データベースに登録されていますが、実際のファイルが存在しません。"
+
+msgid "Orphan record(s):"
+msgstr "孤立レコード："
+
+msgid "Are you sure you want to delete orphan records? This cannot be undone."
+msgstr "孤立レコードを削除しますか？この操作は元に戻せません。"
+
+msgid "Delete Orphan Records"
+msgstr "孤立レコードを削除"
+
+msgid "No issues found"
+msgstr "問題はありません"
+
+msgid "Database and file system are properly synchronized."
+msgstr "データベースとファイルシステムは正常に同期されています。"
+
+msgid "Share Information in Database"
+msgstr "データベース内の共有情報一覧"
+
+msgid "No share information registered."
+msgstr "共有情報が登録されていません。"
+
+msgid "Token"
+msgstr "トークン"
+
+msgid "Files Exist"
+msgstr "ファイル有無"
+
 msgid "Upload Folder Path"
 msgstr "アップロードフォルダのパス"
 
-#: simple-file-share.php
 msgid "Permission denied."
 msgstr "権限がありません。"
+
+msgid "Published"
+msgstr "公開中"
+
+msgid "Draft"
+msgstr "下書き"
+
+#: simple-file-share.php (how to use page)
+msgid "Version:"
+msgstr "バージョン："
+
+msgid "Author:"
+msgstr "作者："
+
+msgid "Overview"
+msgstr "概要"
+
+msgid "\"Simple Secure File Share\" is a plugin for securely sharing files on WordPress sites."
+msgstr "「Simple Secure File Share」は、WordPressサイトでファイルを安全に共有するためのプラグインです。"
+
+msgid "When an administrator uploads files, a dedicated share URL is generated."
+msgstr "管理者がファイルをアップロードすると、専用の共有URLが発行されます。"
+
+msgid "Key Features"
+msgstr "主な機能"
+
+msgid "Set a password on share links for authorized-only access"
+msgstr "共有リンクにパスワードを設定して、許可された人のみアクセス可能に"
+
+msgid "Download Counter"
+msgstr "ダウンロードカウント"
+
+msgid "Automatically count downloads to track usage"
+msgstr "ダウンロード回数を自動でカウントし、利用状況を把握"
+
+msgid "ZIP Download"
+msgstr "ZIPダウンロード"
+
+msgid "Bulk download multiple files as ZIP (supports Japanese filenames)"
+msgstr "複数ファイルをZIPで一括ダウンロード（日本語ファイル名対応）"
+
+msgid "Direct Link Prevention"
+msgstr "直リンク防止"
+
+msgid "Prevent unauthorized downloads via direct URL access"
+msgstr "URL直叩きによる不正ダウンロードを防止"
+
+msgid "Usage Instructions"
+msgstr "使い方"
+
+msgid "Step 1: Upload Files"
+msgstr "ステップ1：ファイルをアップロードする"
+
+msgid "Click \"File Share\" from the WordPress admin sidebar"
+msgstr "WordPress管理画面のサイドメニューから「ファイル共有」をクリック"
+
+msgid "Enter \"Share Title\" (e.g., \"Documents for December 2024\")"
+msgstr "「共有タイトル」を入力（例：「2024年12月の資料」）"
+
+msgid "Optionally enable \"Password Protection\""
+msgstr "必要に応じて「パスワード保護」を「あり」に設定"
+
+msgid "Drag & drop files to the file selection area or click to select"
+msgstr "ファイル選択エリアにファイルをドラッグ＆ドロップ、またはクリックして選択"
+
+msgid "Click \"Upload and Create Share Link\""
+msgstr "「アップロードして共有リンクを作成」ボタンをクリック"
+
+msgid "Step 2: Share the Link"
+msgstr "ステップ2：共有リンクを相手に伝える"
+
+msgid "Click \"Copy\" button to copy the share URL"
+msgstr "共有リンク一覧から「コピー」ボタンでURLをコピー"
+
+msgid "Send via email or chat"
+msgstr "メールやチャットで相手に送信"
+
+msgid "If password is set, share the password as well"
+msgstr "パスワードを設定した場合は、パスワードも一緒に伝える"
+
+msgid "Step 3: Recipient Downloads"
+msgstr "ステップ3：相手がダウンロードする"
+
+msgid "Recipient accesses the share URL"
+msgstr "相手は共有URLにアクセス"
+
+msgid "Enter password if protected"
+msgstr "パスワード保護がある場合はパスワードを入力"
+
+msgid "Download as ZIP or individual files"
+msgstr "「ZIPでダウンロード」または個別ファイルの「DL」ボタンでダウンロード"
+
+msgid "About Advanced Settings"
+msgstr "高度な設定について"
+
+msgid "The \"Advanced Settings\" page allows you to check data consistency:"
+msgstr "「高度な設定」ページでは、プラグインのデータ整合性を確認できます："
+
+msgid "Files exist on server but are not registered in the database."
+msgstr "ファイルはサーバーに存在するが、データベースに登録がない状態です。"
+
+msgid "May have been created by an older version or database was manually deleted."
+msgstr "古いバージョンで作成されたか、データベースのみ削除された可能性があります。"
+
+msgid "Registered in database but actual files do not exist."
+msgstr "データベースには登録があるが、実際のファイルが存在しない状態です。"
+
+msgid "Files may have been manually deleted or upload failed."
+msgstr "ファイルが手動削除されたか、アップロードが失敗した可能性があります。"
+
+msgid "Security Features"
+msgstr "セキュリティ機能"
+
+msgid "Direct Access Prevention:"
+msgstr "直接アクセス防止："
+
+msgid "The protected-uploads/ folder cannot be accessed externally"
+msgstr "protected-uploads/ フォルダには外部からアクセスできません"
+
+msgid "Password Encryption:"
+msgstr "パスワード暗号化："
+
+msgid "Passwords are stored hashed"
+msgstr "パスワードはハッシュ化して保存"
+
+msgid "Cookie Authentication:"
+msgstr "Cookie認証："
+
+msgid "Password authentication is valid for 1 hour"
+msgstr "パスワード認証は1時間有効"
+
+msgid "Referer Check:"
+msgstr "リファラーチェック："
+
+msgid "Prevents downloads from outside the share page"
+msgstr "共有ページ以外からのダウンロードを防止"
+
+msgid "License"
+msgstr "ライセンス"
+
+msgid "Commercial use allowed"
+msgstr "商用利用可"
+
+msgid "Personal use allowed"
+msgstr "個人利用可"
+
+msgid "Modification allowed"
+msgstr "改変可"
+
+msgid "Copyright notice required when redistributing"
+msgstr "再配布時は著作権表示必須"
+
+msgid "Removal of copyright notice prohibited"
+msgstr "著作権表示の削除禁止"
+
+msgid "If you absolutely need to remove the copyright notice, we can arrange this for a fee."
+msgstr "著作権表示をどうしても削除したい場合は、有償にて対応いたします。"
+
+msgid "Please contact us via X (Twitter) or the website."
+msgstr "X (Twitter)またはウェブサイトよりお問い合わせください。"

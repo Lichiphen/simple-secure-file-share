@@ -5,254 +5,406 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Simple Secure File Share 3.1.0\n"
+"Project-Id-Version: Simple Secure File Share 3.1.1\n"
 "Report-Msgid-Bugs-To: https://lichiphen.com\n"
-"POT-Creation-Date: 2025-12-07 21:00:00+0900\n"
+"POT-Creation-Date: 2025-12-08 02:00:00+0900\n"
 "PO-Revision-Date: \n"
-"Last-Translator: Lichiphen <contact@example.com>\n"
+"Last-Translator: Lichiphen <contact@lichiphen.com>\n"
 "Language-Team: \n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit\n"
 
-#: simple-file-share.php
+#: simple-file-share.php (menu)
 msgid "File Share"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Advanced Settings"
 msgstr ""
 
-#: simple-file-share.php
 msgid "How to Use"
 msgstr ""
 
-#: simple-file-share.php
+#: simple-file-share.php (admin page)
+msgid "Secure File Sharing System"
+msgstr ""
+
 msgid "Create New Share"
 msgstr ""
 
-#: simple-file-share.php
-msgid "Share Title"
+msgid "Share Title (for management)"
 msgstr ""
 
-#: simple-file-share.php
-msgid "Enter a title for the share"
+msgid "Example: Documents for Mr./Ms. XX"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Password Protection"
 msgstr ""
 
-#: simple-file-share.php
 msgid "None"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Yes"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Enter password"
 msgstr ""
 
-#: simple-file-share.php
+msgid "Show password"
+msgstr ""
+
 msgid "Auto Generate"
 msgstr ""
 
-#: simple-file-share.php
+msgid "* Password will be copied to clipboard when you click the auto-generate button."
+msgstr ""
+
 msgid "File Selection"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Drag and drop files here"
 msgstr ""
 
-#: simple-file-share.php
-msgid "or click to select files"
+msgid "or"
 msgstr ""
 
-#: simple-file-share.php
+msgid "click to select files"
+msgstr ""
+
+msgid "Files waiting to upload:"
+msgstr ""
+
+msgid "Clear all"
+msgstr ""
+
+msgid "Uploading..."
+msgstr ""
+
 msgid "Upload and Create Share Link"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Active Share Links"
 msgstr ""
 
-#: simple-file-share.php
 msgid "No shared files yet."
 msgstr ""
 
-#: simple-file-share.php
 msgid "Title"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Status"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Share URL"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Files"
 msgstr ""
 
-#: simple-file-share.php
 msgid "DL Count"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Created"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Actions"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Locked"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Public"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Copy"
 msgstr ""
 
-#: simple-file-share.php
-msgid "Delete"
-msgstr ""
-
-#: simple-file-share.php
 msgid "Are you sure you want to delete? Uploaded files will also be deleted."
 msgstr ""
 
-#: simple-file-share.php
+msgid "Delete"
+msgstr ""
+
 msgid "Upload Complete!"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Files have been saved securely and a share link has been created."
 msgstr ""
 
-#: simple-file-share.php
+msgid "Refresh List"
+msgstr ""
+
 msgid "URL copied!"
 msgstr ""
 
-#: simple-file-share.php
+msgid "Copy failed"
+msgstr ""
+
 msgid "Password copied!"
 msgstr ""
 
-#: simple-file-share.php
+#: simple-file-share.php (password form)
 msgid "Password Authentication"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Password Protected Area"
 msgstr ""
 
-#: simple-file-share.php
 msgid "A password is required to access this content."
 msgstr ""
 
-#: simple-file-share.php
 msgid "Incorrect password."
 msgstr ""
 
-#: simple-file-share.php
-msgid "Authenticate and View Files"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Download as ZIP"
-msgstr ""
-
-#: simple-file-share.php
-msgid "File List"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Invalid access. Please download from the share page."
-msgstr ""
-
-#: simple-file-share.php
-msgid "Access Denied"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Registered Shares"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Upload Folders"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Orphan Folders"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Orphan Records"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Orphan folders found"
-msgstr ""
-
-#: simple-file-share.php
-msgid "These folders are not registered in the database."
-msgstr ""
-
-#: simple-file-share.php
-msgid "Delete Orphan Folders"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Orphan records found"
-msgstr ""
-
-#: simple-file-share.php
-msgid "These database records have no corresponding files."
-msgstr ""
-
-#: simple-file-share.php
-msgid "Delete Orphan Records"
-msgstr ""
-
-#: simple-file-share.php
-msgid "No issues found"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Database and file system are properly synchronized."
-msgstr ""
-
-#: simple-file-share.php
-msgid "Database Share List"
-msgstr ""
-
-#: simple-file-share.php
-msgid "Token"
-msgstr ""
-
-#: simple-file-share.php
-msgid "File Exists"
-msgstr ""
-
-#: simple-file-share.php
 msgid "Password"
 msgstr ""
 
-#: simple-file-share.php
+msgid "Authenticate and View Files"
+msgstr ""
+
+#: simple-file-share.php (frontend share page)
+msgid "File Sharing"
+msgstr ""
+
+msgid "files"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Download as ZIP"
+msgstr ""
+
+msgid "Download File"
+msgstr ""
+
+msgid "If you have any questions, please feel free to contact us."
+msgstr ""
+
+msgid "Invalid access. Please download from the share page."
+msgstr ""
+
+msgid "Access Denied"
+msgstr ""
+
+#: simple-file-share.php (advanced settings page)
+msgid "This page allows you to check and manage the integrity of plugin data."
+msgstr ""
+
+msgid "Note: Cleanup operations cannot be undone."
+msgstr ""
+
+msgid "Registered Shares"
+msgstr ""
+
+msgid "Upload Folders"
+msgstr ""
+
+msgid "Orphan Folders"
+msgstr ""
+
+msgid "Orphan Records"
+msgstr ""
+
+msgid "Orphan folders exist. Files exist on server but are not registered in database."
+msgstr ""
+
+msgid "Orphan folder(s):"
+msgstr ""
+
+msgid "Are you sure you want to delete orphan folders? This cannot be undone."
+msgstr ""
+
+msgid "Delete Orphan Folders"
+msgstr ""
+
+msgid "Orphan records exist. Registered in database but actual files do not exist."
+msgstr ""
+
+msgid "Orphan record(s):"
+msgstr ""
+
+msgid "Are you sure you want to delete orphan records? This cannot be undone."
+msgstr ""
+
+msgid "Delete Orphan Records"
+msgstr ""
+
+msgid "No issues found. All data is consistent."
+msgstr ""
+
+msgid "Share Information in Database"
+msgstr ""
+
+msgid "Token"
+msgstr ""
+
+msgid "File Exists"
+msgstr ""
+
 msgid "Upload Folder Path"
 msgstr ""
 
-#: simple-file-share.php
 msgid "Permission denied."
+msgstr ""
+
+#: simple-file-share.php (how to use page)
+msgid "Version:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "\"Simple Secure File Share\" is a plugin for securely sharing files on WordPress sites."
+msgstr ""
+
+msgid "When an administrator uploads files, a dedicated share URL is generated."
+msgstr ""
+
+msgid "Key Features"
+msgstr ""
+
+msgid "Set a password on share links for authorized-only access"
+msgstr ""
+
+msgid "Download Counter"
+msgstr ""
+
+msgid "Automatically count downloads to track usage"
+msgstr ""
+
+msgid "ZIP Download"
+msgstr ""
+
+msgid "Bulk download multiple files as ZIP (supports Japanese filenames)"
+msgstr ""
+
+msgid "Direct Link Prevention"
+msgstr ""
+
+msgid "Prevent unauthorized downloads via direct URL access"
+msgstr ""
+
+msgid "Usage Instructions"
+msgstr ""
+
+msgid "Step 1: Upload Files"
+msgstr ""
+
+msgid "Click \"File Share\" from the WordPress admin sidebar"
+msgstr ""
+
+msgid "Enter \"Share Title\" (e.g., \"Documents for December 2024\")"
+msgstr ""
+
+msgid "Optionally enable \"Password Protection\""
+msgstr ""
+
+msgid "Drag & drop files to the file selection area or click to select"
+msgstr ""
+
+msgid "Click \"Upload and Create Share Link\""
+msgstr ""
+
+msgid "Step 2: Share the Link"
+msgstr ""
+
+msgid "Click \"Copy\" button to copy the share URL"
+msgstr ""
+
+msgid "Send via email or chat"
+msgstr ""
+
+msgid "If password is set, share the password as well"
+msgstr ""
+
+msgid "Step 3: Recipient Downloads"
+msgstr ""
+
+msgid "Recipient accesses the share URL"
+msgstr ""
+
+msgid "Enter password if protected"
+msgstr ""
+
+msgid "Download as ZIP or individual files"
+msgstr ""
+
+msgid "About Advanced Settings"
+msgstr ""
+
+msgid "The \"Advanced Settings\" page allows you to check data consistency:"
+msgstr ""
+
+msgid "Orphan Folders"
+msgstr ""
+
+msgid "Files exist on server but are not registered in the database."
+msgstr ""
+
+msgid "May have been created by an older version or database was manually deleted."
+msgstr ""
+
+msgid "Orphan Records"
+msgstr ""
+
+msgid "Registered in database but actual files do not exist."
+msgstr ""
+
+msgid "Files may have been manually deleted or upload failed."
+msgstr ""
+
+msgid "Security Features"
+msgstr ""
+
+msgid "Direct Access Prevention:"
+msgstr ""
+
+msgid "The protected-uploads/ folder cannot be accessed externally"
+msgstr ""
+
+msgid "Password Encryption:"
+msgstr ""
+
+msgid "Passwords are stored hashed"
+msgstr ""
+
+msgid "Cookie Authentication:"
+msgstr ""
+
+msgid "Password authentication is valid for 1 hour"
+msgstr ""
+
+msgid "Referer Check:"
+msgstr ""
+
+msgid "Prevents downloads from outside the share page"
+msgstr ""
+
+msgid "License"
+msgstr ""
+
+msgid "Commercial use allowed"
+msgstr ""
+
+msgid "Personal use allowed"
+msgstr ""
+
+msgid "Modification allowed"
+msgstr ""
+
+msgid "Copyright notice required when redistributing"
+msgstr ""
+
+msgid "Removal of copyright notice prohibited"
+msgstr ""
+
+msgid "If you absolutely need to remove the copyright notice, we can arrange this for a fee."
+msgstr ""
+
+msgid "Please contact us via X (Twitter) or the website."
 msgstr ""

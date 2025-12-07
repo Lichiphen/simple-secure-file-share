@@ -3,7 +3,7 @@
  * Plugin Name: Simple Secure File Share
  * Plugin URI: https://github.com/Lichiphen/simple-secure-file-share
  * Description: 外部共有用にファイルを安全にアップロードし、専用URLを発行するプラグイン。ファイルは直接アクセスから保護され、Zipダウンロードに対応しています。
- * Version: 3.1.0
+ * Version: 3.1.1
  * Author: AI Generator, Direction：Lichiphen（X@Lichiphen）
  * Author URI: https://lichiphen.com
  * License: Lichiphen Proprietary License v1.0
@@ -248,12 +248,12 @@ class Simple_File_Share {
 
             <div class="sfs-app p-6 max-w-5xl mx-auto bg-white shadow-lg rounded-lg mt-5 relative">
                 <h1 class="text-2xl mb-6 text-gray-800 flex items-center gap-2">
-                    <span class="dashicons dashicons-share text-blue-500" style="font-size:28px;width:28px;height:28px;"></span> 安全なファイル共有システム
+                    <span class="dashicons dashicons-share text-blue-500" style="font-size:28px;width:28px;height:28px;"></span> <?php _e('Secure File Sharing System', 'simple-secure-file-share'); ?>
                 </h1>
 
                 <!-- アップロードフォーム -->
                 <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
-                    <h2 class="text-xl mb-4 text-gray-700">新規共有作成</h2>
+                    <h2 class="text-xl mb-4 text-gray-700"><?php _e('Create New Share', 'simple-secure-file-share'); ?></h2>
                     
                     <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" enctype="multipart/form-data" class="space-y-4" id="sfs-upload-form" autocomplete="off">
                         
@@ -261,21 +261,21 @@ class Simple_File_Share {
                         <?php wp_nonce_field('sfs_upload_nonce', 'sfs_nonce'); ?>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">共有タイトル (管理用)</label>
-                            <input type="text" name="share_title" id="sfs-title-input" required placeholder="例: ○○様向け資料一式" class="w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Share Title (for management)', 'simple-secure-file-share'); ?></label>
+                            <input type="text" name="share_title" id="sfs-title-input" required placeholder="<?php esc_attr_e('Example: Documents for Mr./Ms. XX', 'simple-secure-file-share'); ?>" class="w-full">
                         </div>
 
                         <!-- パスワード設定エリア -->
                         <div class="bg-white p-4 rounded border border-gray-200 shadow-sm">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">パスワード保護</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2"><?php _e('Password Protection', 'simple-secure-file-share'); ?></label>
                             <div class="flex items-center space-x-4 mb-2">
                                 <label class="inline-flex items-center cursor-pointer">
                                     <input type="radio" name="enable_password" value="0" class="form-radio text-blue-600" checked onchange="togglePasswordInput(false)">
-                                    <span class="ml-2">設定しない</span>
+                                    <span class="ml-2"><?php _e('None', 'simple-secure-file-share'); ?></span>
                                 </label>
                                 <label class="inline-flex items-center cursor-pointer">
                                     <input type="radio" name="enable_password" value="1" class="form-radio text-blue-600" onchange="togglePasswordInput(true)">
-                                    <span class="ml-2">設定する</span>
+                                    <span class="ml-2"><?php _e('Yes', 'simple-secure-file-share'); ?></span>
                                 </label>
                             </div>
                             
@@ -285,33 +285,33 @@ class Simple_File_Share {
                                         <!-- type="text" で実装し、CSS(.sfs-masked)で隠す -->
                                         <!-- autocomplete="off" を指定し、ブラウザの介入を最小限に -->
                                         <input type="text" name="share_password" id="sfs-password-input" 
-                                            placeholder="パスワードを入力" 
+                                            placeholder="<?php esc_attr_e('Enter password', 'simple-secure-file-share'); ?>" 
                                             class="sfs-masked w-full pr-10" 
                                             autocomplete="off"
                                             autocorrect="off" 
                                             autocapitalize="off" 
                                             spellcheck="false">
                                         
-                                        <button type="button" id="sfs-toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none" title="パスワードを表示">
+                                        <button type="button" id="sfs-toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none" title="<?php esc_attr_e('Show password', 'simple-secure-file-share'); ?>">
                                             <span class="dashicons dashicons-visibility" style="margin-top:2px;"></span>
                                         </button>
                                     </div>
                                     
                                     <button type="button" id="sfs-generate-password" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
-                                        <span class="dashicons dashicons-randomize mr-1" style="line-height:1.5;"></span> 自動生成
+                                        <span class="dashicons dashicons-randomize mr-1" style="line-height:1.5;"></span> <?php _e('Auto Generate', 'simple-secure-file-share'); ?>
                                     </button>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-2">※パスワードは自動生成ボタンを押すとクリップボードにコピーされます。</p>
+                                <p class="text-xs text-gray-500 mt-2"><?php _e('* Password will be copied to clipboard when you click the auto-generate button.', 'simple-secure-file-share'); ?></p>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ファイル選択</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('File Selection', 'simple-secure-file-share'); ?></label>
                             <div id="sfs-drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white hover:bg-gray-50 transition cursor-pointer relative group">
                                 <div class="pointer-events-none">
                                     <span class="dashicons dashicons-cloud-upload text-gray-400 mb-2" style="font-size: 48px; width: 48px; height: 48px;"></span>
-                                    <p class="text-gray-600 font-medium text-lg mt-2">ファイルをここにドラッグ＆ドロップ</p>
-                                    <p class="text-sm text-gray-500 mt-1">または <span class="text-blue-600 font-bold underline decoration-blue-300 decoration-2 underline-offset-2">クリックしてファイルを選択</span></p>
+                                    <p class="text-gray-600 font-medium text-lg mt-2"><?php _e('Drag and drop files here', 'simple-secure-file-share'); ?></p>
+                                    <p class="text-sm text-gray-500 mt-1"><?php _e('or', 'simple-secure-file-share'); ?> <span class="text-blue-600 font-bold underline decoration-blue-300 decoration-2 underline-offset-2"><?php _e('click to select files', 'simple-secure-file-share'); ?></span></p>
                                 </div>
                                 <input type="file" id="sfs-file-trigger" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                             </div>
@@ -320,8 +320,8 @@ class Simple_File_Share {
                             <!-- ファイルリスト -->
                             <div id="sfs-file-list-container" class="mt-4 hidden">
                                 <div class="flex justify-between items-center mb-2">
-                                    <p class="text-sm font-bold text-gray-700">アップロード待機中のファイル:</p>
-                                    <button type="button" id="sfs-clear-all" class="text-xs text-red-500 hover:underline">すべてクリア</button>
+                                    <p class="text-sm font-bold text-gray-700"><?php _e('Files waiting to upload:', 'simple-secure-file-share'); ?></p>
+                                    <button type="button" id="sfs-clear-all" class="text-xs text-red-500 hover:underline"><?php _e('Clear all', 'simple-secure-file-share'); ?></button>
                                 </div>
                                 <ul id="sfs-file-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></ul>
                             </div>
@@ -330,7 +330,7 @@ class Simple_File_Share {
                         <!-- プログレスバー -->
                         <div id="sfs-progress-wrapper" class="hidden mt-4">
                             <div class="flex justify-between text-xs font-semibold text-gray-600 mb-1">
-                                <span>アップロード中...</span>
+                                <span><?php _e('Uploading...', 'simple-secure-file-share'); ?></span>
                                 <span id="sfs-progress-text">0%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
@@ -339,27 +339,27 @@ class Simple_File_Share {
                         </div>
 
                         <button type="submit" id="sfs-submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded shadow transition w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
-                            アップロードして共有リンクを作成
+                            <?php _e('Upload and Create Share Link', 'simple-secure-file-share'); ?>
                         </button>
                     </form>
                 </div>
 
                 <!-- 共有リスト -->
-                <h2 class="text-xl mb-4 text-gray-700">有効な共有リンク一覧</h2>
+                <h2 class="text-xl mb-4 text-gray-700"><?php _e('Active Share Links', 'simple-secure-file-share'); ?></h2>
                 <?php if (empty($shares)): ?>
-                    <p class="text-gray-500">まだ共有されたファイルはありません。</p>
+                    <p class="text-gray-500"><?php _e('No shared files yet.', 'simple-secure-file-share'); ?></p>
                 <?php else: ?>
                     <div class="overflow-x-auto -mx-6 px-6">
                         <table class="w-full text-sm text-left text-gray-500 border-collapse" style="min-width: 800px;">
                             <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                                 <tr>
-                                    <th class="px-4 py-3 border-b" style="min-width: 120px; max-width: 150px;">タイトル</th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap">ステータス</th>
-                                    <th class="px-4 py-3 border-b" style="min-width: 280px;">共有URL</th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center">ファイル数</th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center">DL数</th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap">作成日</th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center">操作</th>
+                                    <th class="px-4 py-3 border-b" style="min-width: 120px; max-width: 150px;"><?php _e('Title', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap"><?php _e('Status', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b" style="min-width: 280px;"><?php _e('Share URL', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center"><?php _e('Files', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center"><?php _e('DL Count', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap"><?php _e('Created', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center"><?php _e('Actions', 'simple-secure-file-share'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -383,10 +383,10 @@ class Simple_File_Share {
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <?php if($has_password): ?>
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span class="dashicons dashicons-lock mr-1" style="font-size:12px;width:12px;height:12px;"></span>鍵付き
+                                                <span class="dashicons dashicons-lock mr-1" style="font-size:12px;width:12px;height:12px;"></span><?php _e('Locked', 'simple-secure-file-share'); ?>
                                             </span>
                                         <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">公開</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><?php _e('Public', 'simple-secure-file-share'); ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 py-4">
@@ -402,7 +402,7 @@ class Simple_File_Share {
                                             <!-- コピーボタン -->
                                             <button type="button" onclick="copyToClipboard('<?php echo esc_url($url); ?>')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs px-3 py-2 rounded border border-blue-200 transition font-bold flex items-center gap-1 whitespace-nowrap">
                                                 <span class="dashicons dashicons-admin-links" style="font-size:14px; width:14px; height:14px;"></span>
-                                                コピー
+                                                <?php _e('Copy', 'simple-secure-file-share'); ?>
                                             </button>
                                             
                                             <a href="<?php echo esc_url($url); ?>" target="_blank" class="text-gray-400 hover:text-blue-600 p-2 rounded hover:bg-gray-100 transition" title="リンクを開く">
@@ -419,11 +419,11 @@ class Simple_File_Share {
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap"><?php echo get_the_date('Y/m/d H:i', $share->ID); ?></td>
                                     <td class="px-4 py-4 text-center">
-                                        <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('本当に削除しますか？アップロードされたファイルも削除されます。');">
+                                        <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('<?php echo esc_js(__('Are you sure you want to delete? Uploaded files will also be deleted.', 'simple-secure-file-share')); ?>');">
                                             <input type="hidden" name="action" value="sfs_delete_share">
                                             <input type="hidden" name="share_id" value="<?php echo $share->ID; ?>">
                                             <?php wp_nonce_field('sfs_delete_nonce', 'sfs_nonce'); ?>
-                                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold whitespace-nowrap">削除</button>
+                                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold whitespace-nowrap"><?php _e('Delete', 'simple-secure-file-share'); ?></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -440,10 +440,10 @@ class Simple_File_Share {
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                         <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     </div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">アップロード完了！</h3>
-                    <p class="text-sm text-gray-500 mb-6">ファイルが安全に保存され、共有リンクが作成されました。</p>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2"><?php _e('Upload Complete!', 'simple-secure-file-share'); ?></h3>
+                    <p class="text-sm text-gray-500 mb-6"><?php _e('Files have been saved securely and a share link has been created.', 'simple-secure-file-share'); ?></p>
                     <button type="button" onclick="window.location.reload()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm">
-                        一覧を更新する
+                        <?php _e('Refresh List', 'simple-secure-file-share'); ?>
                     </button>
                 </div>
             </div>
@@ -470,7 +470,7 @@ class Simple_File_Share {
         function copyToClipboard(text) {
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text).then(function() {
-                    showAdminToast('URLをコピーしました！');
+                    showAdminToast('<?php echo esc_js(__('URL copied!', 'simple-secure-file-share')); ?>');
                 }, function(err) {
                     const textArea = document.createElement("textarea");
                     textArea.value = text;
@@ -478,9 +478,9 @@ class Simple_File_Share {
                     textArea.select();
                     try {
                         document.execCommand('copy');
-                        showAdminToast('URLをコピーしました！');
+                        showAdminToast('<?php echo esc_js(__('URL copied!', 'simple-secure-file-share')); ?>');
                     } catch (err) {
-                        alert('コピーに失敗しました');
+                        alert('<?php echo esc_js(__('Copy failed', 'simple-secure-file-share')); ?>');
                     }
                     document.body.removeChild(textArea);
                 });
@@ -491,9 +491,9 @@ class Simple_File_Share {
                 textArea.select();
                 try {
                     document.execCommand('copy');
-                    showAdminToast('URLをコピーしました！');
+                    showAdminToast('<?php echo esc_js(__('URL copied!', 'simple-secure-file-share')); ?>');
                 } catch (err) {
-                    alert('コピーに失敗しました');
+                    alert('<?php echo esc_js(__('Copy failed', 'simple-secure-file-share')); ?>');
                 }
                 document.body.removeChild(textArea);
             }
@@ -584,9 +584,9 @@ class Simple_File_Share {
                 icon.classList.add('dashicons-hidden');
 
                 navigator.clipboard.writeText(retVal).then(function() {
-                    showAdminToast('パスワードをコピーしました！');
+                    showAdminToast('<?php echo esc_js(__('Password copied!', 'simple-secure-file-share')); ?>');
                 }, function(err) {
-                    console.error('コピー失敗: ', err);
+                    console.error('Copy failed: ', err);
                 });
             });
 
@@ -946,7 +946,7 @@ class Simple_File_Share {
             
             // トークンが正しくない、かつリファラーも不正な場合はエラー
             if ($dl_token !== $expected_token && !$is_valid_referer) {
-                wp_die('不正なアクセスです。共有ページからダウンロードしてください。', 'アクセス拒否', array('response' => 403));
+                wp_die(__('Invalid access. Please download from the share page.', 'simple-secure-file-share'), __('Access Denied', 'simple-secure-file-share'), array('response' => 403));
             }
             
             $target = sanitize_file_name($_GET['download']);
@@ -1041,7 +1041,7 @@ class Simple_File_Share {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta name="robots" content="noindex, nofollow">
-            <title>パスワード認証 - <?php echo esc_html($title); ?></title>
+            <title><?php _e('Password Authentication', 'simple-secure-file-share'); ?> - <?php echo esc_html($title); ?></title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 body { background-color: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; }
@@ -1057,29 +1057,29 @@ class Simple_File_Share {
             <div class="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
                 <div class="bg-gray-800 p-6 text-center text-white">
                     <span class="dashicons dashicons-lock" style="font-size:32px;width:32px;height:32px;color:#93C5FD;"></span>
-                    <h1 class="text-xl font-bold mt-2">パスワード保護領域</h1>
+                    <h1 class="text-xl font-bold mt-2"><?php _e('Password Protected Area', 'simple-secure-file-share'); ?></h1>
                 </div>
                 
                 <div class="p-8">
                     <p class="text-gray-600 text-sm mb-6 text-center">
-                        「<strong><?php echo esc_html($title); ?></strong>」<br>
-                        にアクセスするにはパスワードが必要です。
+                        "<strong><?php echo esc_html($title); ?></strong>"<br>
+                        <?php _e('A password is required to access this content.', 'simple-secure-file-share'); ?>
                     </p>
 
                     <?php if($is_error): ?>
                         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
-                            <span class="block sm:inline">パスワードが正しくありません。</span>
+                            <span class="block sm:inline"><?php _e('Incorrect password.', 'simple-secure-file-share'); ?></span>
                         </div>
                     <?php endif; ?>
 
                     <form method="post" class="space-y-4" autocomplete="off">
                         <div class="relative">
-                            <label for="sfs-frontend-password" class="sr-only">パスワード</label>
+                            <label for="sfs-frontend-password" class="sr-only"><?php _e('Password', 'simple-secure-file-share'); ?></label>
                             <!-- type="text" で実装し、CSS(.sfs-masked)で隠す -->
                             <!-- autocomplete="off" を指定し、ブラウザの介入を最小限に -->
                             <input type="text" name="sfs_password" id="sfs-frontend-password" required 
                                 class="sfs-masked appearance-none rounded-lg relative block w-full px-4 py-3 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
-                                placeholder="パスワードを入力"
+                                placeholder="<?php esc_attr_e('Enter password', 'simple-secure-file-share'); ?>"
                                 autocomplete="off"
                                 autocorrect="off" 
                                 autocapitalize="off" 
@@ -1094,7 +1094,7 @@ class Simple_File_Share {
                             <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                                 <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400 transition" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg>
                             </span>
-                            認証してファイルを閲覧
+                            <?php _e('Authenticate and View Files', 'simple-secure-file-share'); ?>
                         </button>
                     </form>
                 </div>
@@ -1174,12 +1174,12 @@ class Simple_File_Share {
         <?php if (count($files) > 1): ?>
         <a href="<?php echo esc_url(add_query_arg('download', 'zip', $download_base)); ?>" class="flex items-center space-x-2 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            <span>まとめてダウンロード (.zip)</span>
+            <span><?php _e('Download as ZIP', 'simple-secure-file-share'); ?></span>
         </a>
         <?php else: ?>
         <a href="<?php echo esc_url(add_query_arg('download', $files[0]['system_name'], $download_base)); ?>" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            <span>ファイルをダウンロード</span>
+            <span><?php _e('Download File', 'simple-secure-file-share'); ?></span>
         </a>
         <?php endif; ?>
         <?php
@@ -1192,7 +1192,7 @@ class Simple_File_Share {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta name="robots" content="noindex, nofollow">
-            <title><?php echo esc_html($title); ?> - ファイル共有</title>
+            <title><?php echo esc_html($title); ?> - <?php _e('File Share', 'simple-secure-file-share'); ?></title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 body { background-color: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; }
@@ -1204,7 +1204,7 @@ class Simple_File_Share {
                 <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-blue-200 text-sm font-semibold uppercase tracking-wider">File Sharing</p>
+                            <p class="text-blue-200 text-sm font-semibold uppercase tracking-wider"><?php _e('File Sharing', 'simple-secure-file-share'); ?></p>
                             <h1 class="text-3xl font-bold mt-1"><?php echo esc_html($title); ?></h1>
                         </div>
                         <div class="bg-white/20 p-3 rounded-full">
@@ -1212,8 +1212,8 @@ class Simple_File_Share {
                         </div>
                     </div>
                     <div class="mt-4 flex items-center text-sm text-blue-100 space-x-4">
-                        <span><span class="font-bold"><?php echo count($files); ?></span> ファイル</span>
-                        <span>合計 <span class="font-bold"><?php echo $formatted_total_size; ?></span></span>
+                        <span><span class="font-bold"><?php echo count($files); ?></span> <?php _e('files', 'simple-secure-file-share'); ?></span>
+                        <span><?php _e('Total', 'simple-secure-file-share'); ?> <span class="font-bold"><?php echo $formatted_total_size; ?></span></span>
                     </div>
                 </div>
 
@@ -1254,7 +1254,7 @@ class Simple_File_Share {
 
                 <div class="p-6 bg-white flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-xs text-gray-400 text-center md:text-left">
-                        ご不明な点がございましたら、お気軽にお問い合わせください。
+                        <?php _e('If you have any questions, please feel free to contact us.', 'simple-secure-file-share'); ?>
                     </div>
                     <?php echo $download_btn_html; ?>
                 </div>
@@ -1318,31 +1318,31 @@ class Simple_File_Share {
             <div class="sfs-adv p-6 max-w-5xl mx-auto bg-white shadow-lg rounded-lg mt-5">
                 <h1 class="text-2xl mb-6 text-gray-800 flex items-center gap-2">
                     <span class="dashicons dashicons-admin-tools text-orange-500" style="font-size:28px;width:28px;height:28px;"></span>
-                    高度な設定
+                    <?php _e('Advanced Settings', 'simple-secure-file-share'); ?>
                 </h1>
                 
                 <p class="text-gray-600 mb-6">
-                    このページでは、プラグインのデータベースとファイルの整合性を確認・管理できます。<br>
-                    <span class="text-red-600 font-bold">※注意：クリーンアップ操作は元に戻せません。</span>
+                    <?php _e('On this page, you can check and manage the consistency of the plugin database and files.', 'simple-secure-file-share'); ?><br>
+                    <span class="text-red-600 font-bold"><?php _e('* Warning: Cleanup operations cannot be undone.', 'simple-secure-file-share'); ?></span>
                 </p>
                 
                 <!-- 統計情報 -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <div class="text-blue-800 font-bold text-2xl"><?php echo count($shares); ?></div>
-                        <div class="text-blue-600 text-sm">登録済み共有数</div>
+                        <div class="text-blue-600 text-sm"><?php _e('Registered Shares', 'simple-secure-file-share'); ?></div>
                     </div>
                     <div class="bg-green-50 p-4 rounded-lg border border-green-200">
                         <div class="text-green-800 font-bold text-2xl"><?php echo count($upload_folders); ?></div>
-                        <div class="text-green-600 text-sm">アップロードフォルダ数</div>
+                        <div class="text-green-600 text-sm"><?php _e('Upload Folders', 'simple-secure-file-share'); ?></div>
                     </div>
                     <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                         <div class="text-yellow-800 font-bold text-2xl"><?php echo count($orphan_folders); ?></div>
-                        <div class="text-yellow-600 text-sm">孤立フォルダ数</div>
+                        <div class="text-yellow-600 text-sm"><?php _e('Orphan Folders', 'simple-secure-file-share'); ?></div>
                     </div>
                     <div class="bg-red-50 p-4 rounded-lg border border-red-200">
                         <div class="text-red-800 font-bold text-2xl"><?php echo count($orphan_records); ?></div>
-                        <div class="text-red-600 text-sm">孤立レコード数</div>
+                        <div class="text-red-600 text-sm"><?php _e('Orphan Records', 'simple-secure-file-share'); ?></div>
                     </div>
                 </div>
                 
@@ -1351,11 +1351,11 @@ class Simple_File_Share {
                 <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-300 mb-6">
                     <h2 class="text-lg text-yellow-800 mb-2 flex items-center gap-2">
                         <span class="dashicons dashicons-warning"></span>
-                        孤立フォルダが見つかりました
+                        <?php _e('Orphan folders found', 'simple-secure-file-share'); ?>
                     </h2>
                     <p class="text-yellow-700 text-sm mb-4">
-                        以下のフォルダはデータベースに登録されていません。<br>
-                        古いバージョンで作成されたか、データベースのみ削除された可能性があります。
+                        <?php _e('The following folders are not registered in the database.', 'simple-secure-file-share'); ?><br>
+                        <?php _e('They may have been created by an older version or the database was deleted.', 'simple-secure-file-share'); ?>
                     </p>
                     <ul class="text-sm text-yellow-800 mb-4 max-h-40 overflow-y-auto bg-white p-3 rounded border">
                         <?php foreach ($orphan_folders as $folder): ?>
@@ -1364,11 +1364,11 @@ class Simple_File_Share {
                         </li>
                         <?php endforeach; ?>
                     </ul>
-                    <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('孤立フォルダを完全に削除します。この操作は元に戻せません。続行しますか？');">
+                    <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('<?php echo esc_js(__('Orphan folders will be permanently deleted. This cannot be undone. Continue?', 'simple-secure-file-share')); ?>');">
                         <input type="hidden" name="action" value="sfs_cleanup_orphan">
                         <?php wp_nonce_field('sfs_cleanup_nonce', 'sfs_nonce'); ?>
                         <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition">
-                            孤立フォルダを削除
+                            <?php _e('Delete Orphan Folders', 'simple-secure-file-share'); ?>
                         </button>
                     </form>
                 </div>
@@ -1379,11 +1379,11 @@ class Simple_File_Share {
                 <div class="bg-red-50 p-6 rounded-lg border border-red-300 mb-6">
                     <h2 class="text-lg text-red-800 mb-2 flex items-center gap-2">
                         <span class="dashicons dashicons-warning"></span>
-                        孤立レコードが見つかりました
+                        <?php _e('Orphan records found', 'simple-secure-file-share'); ?>
                     </h2>
                     <p class="text-red-700 text-sm mb-4">
-                        以下のデータベースレコードには対応するファイルフォルダがありません。<br>
-                        ファイルが手動削除されたか、アップロードが失敗した可能性があります。
+                        <?php _e('The following database records have no corresponding file folder.', 'simple-secure-file-share'); ?><br>
+                        <?php _e('Files may have been manually deleted or upload failed.', 'simple-secure-file-share'); ?>
                     </p>
                     <ul class="text-sm text-red-800 mb-4 max-h-40 overflow-y-auto bg-white p-3 rounded border">
                         <?php foreach ($orphan_records as $record): ?>
@@ -1392,11 +1392,11 @@ class Simple_File_Share {
                         </li>
                         <?php endforeach; ?>
                     </ul>
-                    <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('孤立レコードをデータベースから削除します。この操作は元に戻せません。続行しますか？');">
+                    <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('<?php echo esc_js(__('Orphan records will be deleted from the database. This cannot be undone. Continue?', 'simple-secure-file-share')); ?>');">
                         <input type="hidden" name="action" value="sfs_cleanup_db">
                         <?php wp_nonce_field('sfs_cleanup_nonce', 'sfs_nonce'); ?>
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">
-                            孤立レコードを削除
+                            <?php _e('Delete Orphan Records', 'simple-secure-file-share'); ?>
                         </button>
                     </form>
                 </div>
@@ -1406,10 +1406,10 @@ class Simple_File_Share {
                 <div class="bg-green-50 p-6 rounded-lg border border-green-300 mb-6">
                     <h2 class="text-lg text-green-800 mb-2 flex items-center gap-2">
                         <span class="dashicons dashicons-yes-alt"></span>
-                        問題は見つかりませんでした
+                        <?php _e('No issues found', 'simple-secure-file-share'); ?>
                     </h2>
                     <p class="text-green-700 text-sm">
-                        データベースとファイルシステムは正常に同期されています。
+                        <?php _e('Database and file system are properly synchronized.', 'simple-secure-file-share'); ?>
                     </p>
                 </div>
                 <?php endif; ?>
@@ -1417,24 +1417,24 @@ class Simple_File_Share {
                 <!-- データベース内容一覧 -->
                 <h2 class="text-xl mb-4 text-gray-700 flex items-center gap-2">
                     <span class="dashicons dashicons-database"></span>
-                    データベース内の共有情報一覧
+                    <?php _e('Share Information in Database', 'simple-secure-file-share'); ?>
                 </h2>
                 
                 <?php if (empty($shares)): ?>
-                    <p class="text-gray-500">登録されている共有情報はありません。</p>
+                    <p class="text-gray-500"><?php _e('No share information registered.', 'simple-secure-file-share'); ?></p>
                 <?php else: ?>
                     <div class="overflow-x-auto -mx-6 px-6">
                         <table class="w-full text-sm text-left text-gray-500 border-collapse" style="min-width: 900px;">
                             <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                                 <tr>
                                     <th class="px-3 py-2 border-b">ID</th>
-                                    <th class="px-3 py-2 border-b" style="max-width: 150px;">タイトル</th>
-                                    <th class="px-3 py-2 border-b">トークン</th>
-                                    <th class="px-3 py-2 border-b text-center">ファイル有無</th>
-                                    <th class="px-3 py-2 border-b text-center">パスワード</th>
-                                    <th class="px-3 py-2 border-b text-center">DL数</th>
-                                    <th class="px-3 py-2 border-b">作成日</th>
-                                    <th class="px-3 py-2 border-b">ステータス</th>
+                                    <th class="px-3 py-2 border-b" style="max-width: 150px;"><?php _e('Title', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-3 py-2 border-b"><?php _e('Token', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-3 py-2 border-b text-center"><?php _e('Files Exist', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-3 py-2 border-b text-center"><?php _e('Password', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-3 py-2 border-b text-center"><?php _e('DL Count', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-3 py-2 border-b"><?php _e('Created', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-3 py-2 border-b"><?php _e('Status', 'simple-secure-file-share'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1471,7 +1471,15 @@ class Simple_File_Share {
                                     <td class="px-3 py-2 text-xs whitespace-nowrap"><?php echo get_the_date('Y/m/d H:i', $share->ID); ?></td>
                                     <td class="px-3 py-2">
                                         <span class="px-2 py-1 rounded text-xs <?php echo $share->post_status === 'publish' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'; ?>">
-                                            <?php echo esc_html($share->post_status); ?>
+                                            <?php 
+                                            if ($share->post_status === 'publish') {
+                                                _e('Published', 'simple-secure-file-share');
+                                            } elseif ($share->post_status === 'draft') {
+                                                _e('Draft', 'simple-secure-file-share');
+                                            } else {
+                                                echo esc_html($share->post_status);
+                                            }
+                                            ?>
                                         </span>
                                     </td>
                                 </tr>
@@ -1483,7 +1491,7 @@ class Simple_File_Share {
                 
                 <!-- アップロードフォルダのパス表示 -->
                 <div class="mt-8 p-4 bg-gray-50 rounded border">
-                    <h3 class="text-sm font-bold text-gray-700 mb-2">アップロードフォルダのパス</h3>
+                    <h3 class="text-sm font-bold text-gray-700 mb-2"><?php _e('Upload Folder Path', 'simple-secure-file-share'); ?></h3>
                     <code class="text-xs bg-gray-200 p-2 rounded block break-all"><?php echo esc_html($this->upload_dir); ?></code>
                 </div>
             </div>
@@ -1495,7 +1503,7 @@ class Simple_File_Share {
      * 孤立フォルダのクリーンアップ
      */
     public function handle_cleanup_orphan() {
-        if (!current_user_can('manage_options')) wp_die('権限がありません。');
+        if (!current_user_can('manage_options')) wp_die(__('Permission denied.', 'simple-secure-file-share'));
         check_admin_referer('sfs_cleanup_nonce', 'sfs_nonce');
         
         // DBに登録されているトークン一覧を取得
@@ -1533,7 +1541,7 @@ class Simple_File_Share {
      * 孤立レコードのクリーンアップ
      */
     public function handle_cleanup_db() {
-        if (!current_user_can('manage_options')) wp_die('権限がありません。');
+        if (!current_user_can('manage_options')) wp_die(__('Permission denied.', 'simple-secure-file-share'));
         check_admin_referer('sfs_cleanup_nonce', 'sfs_nonce');
         
         // アップロードフォルダ内のディレクトリ一覧を取得
@@ -1607,8 +1615,8 @@ class Simple_File_Share {
                 
                 <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <p class="text-blue-800">
-                        <strong>バージョン:</strong> 3.0.0 | 
-                        <strong>作者:</strong> AI Generator, Direction：Lichiphen（<a href="https://x.com/Lichiphen" target="_blank" class="text-blue-600 hover:underline">@Lichiphen</a>）
+                        <strong><?php _e('Version:', 'simple-secure-file-share'); ?></strong> 3.1.1 | 
+                        <strong><?php _e('Author:', 'simple-secure-file-share'); ?></strong> AI Generator, Direction：Lichiphen（<a href="https://x.com/Lichiphen" target="_blank" class="text-blue-600 hover:underline">@Lichiphen</a>）
                     </p>
                 </div>
                 
@@ -1616,11 +1624,11 @@ class Simple_File_Share {
                 <section class="mb-8">
                     <h2 class="text-xl text-gray-700 flex items-center gap-2 border-b pb-2">
                         <span class="dashicons dashicons-info"></span>
-                        概要
+                        <?php _e('Overview', 'simple-secure-file-share'); ?>
                     </h2>
                     <p class="text-gray-600 mt-4">
-                        「Simple Secure File Share」は、WordPressサイトでファイルを安全に共有するためのプラグインです。<br>
-                        管理者がファイルをアップロードすると、専用の共有URLが発行されます。
+                        <?php _e('"Simple Secure File Share" is a plugin for securely sharing files on WordPress sites.', 'simple-secure-file-share'); ?><br>
+                        <?php _e('When an administrator uploads files, a dedicated share URL is generated.', 'simple-secure-file-share'); ?>
                     </p>
                 </section>
                 
@@ -1628,36 +1636,36 @@ class Simple_File_Share {
                 <section class="mb-8">
                     <h2 class="text-xl text-gray-700 flex items-center gap-2 border-b pb-2">
                         <span class="dashicons dashicons-star-filled text-yellow-500"></span>
-                        主な機能
+                        <?php _e('Key Features', 'simple-secure-file-share'); ?>
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div class="p-4 bg-gray-50 rounded border">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2">
                                 <span class="dashicons dashicons-lock text-green-600"></span>
-                                パスワード保護
+                                <?php _e('Password Protection', 'simple-secure-file-share'); ?>
                             </h3>
-                            <p class="text-gray-600 text-sm mt-1">共有リンクにパスワードを設定して、許可された人のみアクセス可能に</p>
+                            <p class="text-gray-600 text-sm mt-1"><?php _e('Set a password on share links for authorized-only access', 'simple-secure-file-share'); ?></p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded border">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2">
                                 <span class="dashicons dashicons-chart-bar text-blue-600"></span>
-                                ダウンロードカウント
+                                <?php _e('Download Counter', 'simple-secure-file-share'); ?>
                             </h3>
-                            <p class="text-gray-600 text-sm mt-1">ダウンロード回数を自動でカウントし、利用状況を把握</p>
+                            <p class="text-gray-600 text-sm mt-1"><?php _e('Automatically count downloads to track usage', 'simple-secure-file-share'); ?></p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded border">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2">
                                 <span class="dashicons dashicons-download text-purple-600"></span>
-                                ZIPダウンロード
+                                <?php _e('ZIP Download', 'simple-secure-file-share'); ?>
                             </h3>
-                            <p class="text-gray-600 text-sm mt-1">複数ファイルをZIPで一括ダウンロード（日本語ファイル名対応）</p>
+                            <p class="text-gray-600 text-sm mt-1"><?php _e('Bulk download multiple files as ZIP (supports Japanese filenames)', 'simple-secure-file-share'); ?></p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded border">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2">
                                 <span class="dashicons dashicons-shield text-red-600"></span>
-                                直リンク防止
+                                <?php _e('Direct Link Prevention', 'simple-secure-file-share'); ?>
                             </h3>
-                            <p class="text-gray-600 text-sm mt-1">URL直叩きによる不正ダウンロードを防止</p>
+                            <p class="text-gray-600 text-sm mt-1"><?php _e('Prevent unauthorized downloads via direct URL access', 'simple-secure-file-share'); ?></p>
                         </div>
                     </div>
                 </section>
@@ -1666,36 +1674,36 @@ class Simple_File_Share {
                 <section class="mb-8">
                     <h2 class="text-xl text-gray-700 flex items-center gap-2 border-b pb-2">
                         <span class="dashicons dashicons-welcome-learn-more text-indigo-500"></span>
-                        使い方
+                        <?php _e('Usage Instructions', 'simple-secure-file-share'); ?>
                     </h2>
                     
                     <div class="mt-4 space-y-6">
                         <div class="p-4 bg-green-50 rounded border border-green-200">
-                            <h3 class="font-bold text-green-800">ステップ1：ファイルをアップロードする</h3>
+                            <h3 class="font-bold text-green-800"><?php _e('Step 1: Upload Files', 'simple-secure-file-share'); ?></h3>
                             <ol class="text-gray-700 mt-2">
-                                <li>WordPress管理画面のサイドメニューから「<strong>ファイル共有</strong>」をクリック</li>
-                                <li>「<strong>共有タイトル</strong>」を入力（例：「2024年12月の資料」）</li>
-                                <li>必要に応じて「<strong>パスワード保護</strong>」を「あり」に設定</li>
-                                <li><strong>ファイル選択エリア</strong>にファイルをドラッグ＆ドロップ、またはクリックして選択</li>
-                                <li>「<strong>アップロードして共有リンクを作成</strong>」ボタンをクリック</li>
+                                <li><?php _e('Click "File Share" from the WordPress admin sidebar', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Enter "Share Title" (e.g., "Documents for December 2024")', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Optionally enable "Password Protection"', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Drag & drop files to the file selection area or click to select', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Click "Upload and Create Share Link"', 'simple-secure-file-share'); ?></li>
                             </ol>
                         </div>
                         
                         <div class="p-4 bg-blue-50 rounded border border-blue-200">
-                            <h3 class="font-bold text-blue-800">ステップ2：共有リンクを相手に伝える</h3>
+                            <h3 class="font-bold text-blue-800"><?php _e('Step 2: Share the Link', 'simple-secure-file-share'); ?></h3>
                             <ul class="text-gray-700 mt-2">
-                                <li>共有リンク一覧から「<strong>コピー</strong>」ボタンでURLをコピー</li>
-                                <li>メールやチャットで相手に送信</li>
-                                <li>パスワードを設定した場合は、パスワードも一緒に伝える</li>
+                                <li><?php _e('Click "Copy" button to copy the share URL', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Send via email or chat', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('If password is set, share the password as well', 'simple-secure-file-share'); ?></li>
                             </ul>
                         </div>
                         
                         <div class="p-4 bg-purple-50 rounded border border-purple-200">
-                            <h3 class="font-bold text-purple-800">ステップ3：相手がダウンロードする</h3>
+                            <h3 class="font-bold text-purple-800"><?php _e('Step 3: Recipient Downloads', 'simple-secure-file-share'); ?></h3>
                             <ul class="text-gray-700 mt-2">
-                                <li>相手は共有URLにアクセス</li>
-                                <li>パスワード保護がある場合はパスワードを入力</li>
-                                <li>「<strong>ZIPでダウンロード</strong>」または個別ファイルの「<strong>DL</strong>」ボタンでダウンロード</li>
+                                <li><?php _e('Recipient accesses the share URL', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Enter password if protected', 'simple-secure-file-share'); ?></li>
+                                <li><?php _e('Download as ZIP or individual files', 'simple-secure-file-share'); ?></li>
                             </ul>
                         </div>
                     </div>
@@ -1705,24 +1713,24 @@ class Simple_File_Share {
                 <section class="mb-8">
                     <h2 class="text-xl text-gray-700 flex items-center gap-2 border-b pb-2">
                         <span class="dashicons dashicons-admin-tools text-orange-500"></span>
-                        高度な設定について
+                        <?php _e('About Advanced Settings', 'simple-secure-file-share'); ?>
                     </h2>
                     <div class="mt-4 text-gray-600">
-                        <p class="mb-4">「高度な設定」ページでは、プラグインのデータ整合性を確認できます：</p>
+                        <p class="mb-4"><?php _e('The "Advanced Settings" page allows you to check data consistency:', 'simple-secure-file-share'); ?></p>
                         
                         <div class="p-4 bg-yellow-50 rounded border border-yellow-200 mb-4">
-                            <h3 class="font-bold text-yellow-800">孤立フォルダ</h3>
+                            <h3 class="font-bold text-yellow-800"><?php _e('Orphan Folders', 'simple-secure-file-share'); ?></h3>
                             <p class="text-sm mt-1">
-                                ファイルはサーバーに存在するが、データベースに登録がない状態です。<br>
-                                古いバージョンで作成されたか、データベースのみ削除された可能性があります。
+                                <?php _e('Files exist on server but are not registered in the database.', 'simple-secure-file-share'); ?><br>
+                                <?php _e('May have been created by an older version or database was manually deleted.', 'simple-secure-file-share'); ?>
                             </p>
                         </div>
                         
                         <div class="p-4 bg-red-50 rounded border border-red-200">
-                            <h3 class="font-bold text-red-800">孤立レコード</h3>
+                            <h3 class="font-bold text-red-800"><?php _e('Orphan Records', 'simple-secure-file-share'); ?></h3>
                             <p class="text-sm mt-1">
-                                データベースには登録があるが、実際のファイルが存在しない状態です。<br>
-                                ファイルが手動削除されたか、アップロードが失敗した可能性があります。
+                                <?php _e('Registered in database but actual files do not exist.', 'simple-secure-file-share'); ?><br>
+                                <?php _e('Files may have been manually deleted or upload failed.', 'simple-secure-file-share'); ?>
                             </p>
                         </div>
                     </div>
@@ -1732,13 +1740,13 @@ class Simple_File_Share {
                 <section class="mb-8">
                     <h2 class="text-xl text-gray-700 flex items-center gap-2 border-b pb-2">
                         <span class="dashicons dashicons-shield-alt text-green-600"></span>
-                        セキュリティ機能
+                        <?php _e('Security Features', 'simple-secure-file-share'); ?>
                     </h2>
                     <ul class="mt-4 text-gray-600">
-                        <li><strong>直接アクセス防止：</strong> <code>protected-uploads/</code> フォルダには外部からアクセスできません</li>
-                        <li><strong>パスワード暗号化：</strong> パスワードはハッシュ化して保存</li>
-                        <li><strong>Cookie認証：</strong> パスワード認証は1時間有効</li>
-                        <li><strong>リファラーチェック：</strong> 共有ページ以外からのダウンロードを防止</li>
+                        <li><strong><?php _e('Direct Access Prevention:', 'simple-secure-file-share'); ?></strong> <?php _e('The protected-uploads/ folder cannot be accessed externally', 'simple-secure-file-share'); ?></li>
+                        <li><strong><?php _e('Password Encryption:', 'simple-secure-file-share'); ?></strong> <?php _e('Passwords are stored hashed', 'simple-secure-file-share'); ?></li>
+                        <li><strong><?php _e('Cookie Authentication:', 'simple-secure-file-share'); ?></strong> <?php _e('Password authentication is valid for 1 hour', 'simple-secure-file-share'); ?></li>
+                        <li><strong><?php _e('Referer Check:', 'simple-secure-file-share'); ?></strong> <?php _e('Prevents downloads from outside the share page', 'simple-secure-file-share'); ?></li>
                     </ul>
                 </section>
                 
@@ -1746,18 +1754,22 @@ class Simple_File_Share {
                 <section class="mb-4">
                     <h2 class="text-xl text-gray-700 flex items-center gap-2 border-b pb-2">
                         <span class="dashicons dashicons-media-text"></span>
-                        ライセンス
+                        <?php _e('License', 'simple-secure-file-share'); ?>
                     </h2>
                     <div class="mt-4 p-4 bg-gray-50 rounded border">
                         <p class="text-gray-700 font-bold">Lichiphen Proprietary License v1.0</p>
                         <ul class="text-gray-600 mt-2 text-sm">
-                            <li>✅ 商用利用可</li>
-                            <li>✅ 個人利用可</li>
-                            <li>✅ 改変可</li>
-                            <li>⚠️ 再配布時は著作権表示必須</li>
-                            <li>❌ 著作権表示の削除禁止</li>
+                            <li>✅ <?php _e('Commercial use allowed', 'simple-secure-file-share'); ?></li>
+                            <li>✅ <?php _e('Personal use allowed', 'simple-secure-file-share'); ?></li>
+                            <li>✅ <?php _e('Modification allowed', 'simple-secure-file-share'); ?></li>
+                            <li>⚠️ <?php _e('Copyright notice required when redistributing', 'simple-secure-file-share'); ?></li>
+                            <li>❌ <?php _e('Removal of copyright notice prohibited', 'simple-secure-file-share'); ?></li>
                         </ul>
-                        <p class="text-gray-500 text-xs mt-2">Copyright (c) 2024 Lichiphen. All rights reserved.</p>
+                        <p class="text-gray-500 text-xs mt-3">
+                            <?php _e('If you absolutely need to remove the copyright notice, we can arrange this for a fee.', 'simple-secure-file-share'); ?><br>
+                            <?php _e('Please contact us via X (Twitter) or the website.', 'simple-secure-file-share'); ?>
+                        </p>
+                        <p class="text-gray-500 text-xs mt-2">Copyright (c) 2025 Lichiphen. All rights reserved.</p>
                     </div>
                 </section>
             </div>
