@@ -1,0 +1,259 @@
+# Simple Secure File Share - Japanese Translation
+# Copyright (c) 2025 Lichiphen
+# Website: https://lichiphen.com | X (Twitter): https://x.com/Lichiphen
+# This file is distributed under the Lichiphen Proprietary License v1.0.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Simple Secure File Share 3.1.0\n"
+"Report-Msgid-Bugs-To: https://lichiphen.com\n"
+"POT-Creation-Date: 2025-12-07 21:00:00+0900\n"
+"PO-Revision-Date: 2025-12-07 21:00:00+0900\n"
+"Last-Translator: Lichiphen <contact@example.com>\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit\n"
+
+#: simple-file-share.php
+msgid "File Share"
+msgstr "ファイル共有"
+
+#: simple-file-share.php
+msgid "Advanced Settings"
+msgstr "高度な設定"
+
+#: simple-file-share.php
+msgid "How to Use"
+msgstr "使い方"
+
+#: simple-file-share.php
+msgid "Create New Share"
+msgstr "新規共有作成"
+
+#: simple-file-share.php
+msgid "Share Title"
+msgstr "共有タイトル"
+
+#: simple-file-share.php
+msgid "Enter a title for the share"
+msgstr "共有リンクに名前をつけてください"
+
+#: simple-file-share.php
+msgid "Password Protection"
+msgstr "パスワード保護"
+
+#: simple-file-share.php
+msgid "None"
+msgstr "なし"
+
+#: simple-file-share.php
+msgid "Yes"
+msgstr "あり"
+
+#: simple-file-share.php
+msgid "Enter password"
+msgstr "パスワードを入力"
+
+#: simple-file-share.php
+msgid "Auto Generate"
+msgstr "自動生成"
+
+#: simple-file-share.php
+msgid "File Selection"
+msgstr "ファイル選択"
+
+#: simple-file-share.php
+msgid "Drag and drop files here"
+msgstr "ファイルをここにドラッグ＆ドロップ"
+
+#: simple-file-share.php
+msgid "or click to select files"
+msgstr "またはクリックしてファイルを選択"
+
+#: simple-file-share.php
+msgid "Upload and Create Share Link"
+msgstr "アップロードして共有リンクを作成"
+
+#: simple-file-share.php
+msgid "Active Share Links"
+msgstr "有効な共有リンク一覧"
+
+#: simple-file-share.php
+msgid "No shared files yet."
+msgstr "まだ共有されたファイルはありません。"
+
+#: simple-file-share.php
+msgid "Title"
+msgstr "タイトル"
+
+#: simple-file-share.php
+msgid "Status"
+msgstr "ステータス"
+
+#: simple-file-share.php
+msgid "Share URL"
+msgstr "共有URL"
+
+#: simple-file-share.php
+msgid "Files"
+msgstr "ファイル数"
+
+#: simple-file-share.php
+msgid "DL Count"
+msgstr "DL数"
+
+#: simple-file-share.php
+msgid "Created"
+msgstr "作成日"
+
+#: simple-file-share.php
+msgid "Actions"
+msgstr "操作"
+
+#: simple-file-share.php
+msgid "Locked"
+msgstr "鍵付き"
+
+#: simple-file-share.php
+msgid "Public"
+msgstr "公開"
+
+#: simple-file-share.php
+msgid "Copy"
+msgstr "コピー"
+
+#: simple-file-share.php
+msgid "Delete"
+msgstr "削除"
+
+#: simple-file-share.php
+msgid "Are you sure you want to delete? Uploaded files will also be deleted."
+msgstr "本当に削除しますか？アップロードされたファイルも削除されます。"
+
+#: simple-file-share.php
+msgid "Upload Complete!"
+msgstr "アップロード完了！"
+
+#: simple-file-share.php
+msgid "Files have been saved securely and a share link has been created."
+msgstr "ファイルが安全に保存され、共有リンクが作成されました。"
+
+#: simple-file-share.php
+msgid "URL copied!"
+msgstr "URLをコピーしました！"
+
+#: simple-file-share.php
+msgid "Password copied!"
+msgstr "パスワードをコピーしました！"
+
+#: simple-file-share.php
+msgid "Password Authentication"
+msgstr "パスワード認証"
+
+#: simple-file-share.php
+msgid "Password Protected Area"
+msgstr "パスワード保護領域"
+
+#: simple-file-share.php
+msgid "A password is required to access this content."
+msgstr "にアクセスするにはパスワードが必要です。"
+
+#: simple-file-share.php
+msgid "Incorrect password."
+msgstr "パスワードが正しくありません。"
+
+#: simple-file-share.php
+msgid "Authenticate and View Files"
+msgstr "認証してファイルを閲覧"
+
+#: simple-file-share.php
+msgid "Download as ZIP"
+msgstr "ZIPでダウンロード"
+
+#: simple-file-share.php
+msgid "File List"
+msgstr "ファイル一覧"
+
+#: simple-file-share.php
+msgid "Invalid access. Please download from the share page."
+msgstr "不正なアクセスです。共有ページからダウンロードしてください。"
+
+#: simple-file-share.php
+msgid "Access Denied"
+msgstr "アクセス拒否"
+
+#: simple-file-share.php
+msgid "Registered Shares"
+msgstr "登録済み共有数"
+
+#: simple-file-share.php
+msgid "Upload Folders"
+msgstr "アップロードフォルダ数"
+
+#: simple-file-share.php
+msgid "Orphan Folders"
+msgstr "孤立フォルダ数"
+
+#: simple-file-share.php
+msgid "Orphan Records"
+msgstr "孤立レコード数"
+
+#: simple-file-share.php
+msgid "Orphan folders found"
+msgstr "孤立フォルダが見つかりました"
+
+#: simple-file-share.php
+msgid "These folders are not registered in the database."
+msgstr "以下のフォルダはデータベースに登録されていません。"
+
+#: simple-file-share.php
+msgid "Delete Orphan Folders"
+msgstr "孤立フォルダを削除"
+
+#: simple-file-share.php
+msgid "Orphan records found"
+msgstr "孤立レコードが見つかりました"
+
+#: simple-file-share.php
+msgid "These database records have no corresponding files."
+msgstr "以下のデータベースレコードには対応するファイルフォルダがありません。"
+
+#: simple-file-share.php
+msgid "Delete Orphan Records"
+msgstr "孤立レコードを削除"
+
+#: simple-file-share.php
+msgid "No issues found"
+msgstr "問題は見つかりませんでした"
+
+#: simple-file-share.php
+msgid "Database and file system are properly synchronized."
+msgstr "データベースとファイルシステムは正常に同期されています。"
+
+#: simple-file-share.php
+msgid "Database Share List"
+msgstr "データベース内の共有情報一覧"
+
+#: simple-file-share.php
+msgid "Token"
+msgstr "トークン"
+
+#: simple-file-share.php
+msgid "File Exists"
+msgstr "ファイル有無"
+
+#: simple-file-share.php
+msgid "Password"
+msgstr "パスワード"
+
+#: simple-file-share.php
+msgid "Upload Folder Path"
+msgstr "アップロードフォルダのパス"
+
+#: simple-file-share.php
+msgid "Permission denied."
+msgstr "権限がありません。"

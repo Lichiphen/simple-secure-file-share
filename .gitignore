@@ -1,0 +1,20 @@
+# Protected uploads (user data)
+protected-uploads/
+
+# Test files
+test_ui.html
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Compiled translation files (regenerate from .po files)
+*.mo

@@ -1,0 +1,258 @@
+# Simple Secure File Share - Translation Template
+# Copyright (c) 2025 Lichiphen
+# Website: https://lichiphen.com | X (Twitter): https://x.com/Lichiphen
+# This file is distributed under the Lichiphen Proprietary License v1.0.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Simple Secure File Share 3.1.0\n"
+"Report-Msgid-Bugs-To: https://lichiphen.com\n"
+"POT-Creation-Date: 2025-12-07 21:00:00+0900\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Lichiphen <contact@example.com>\n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit\n"
+
+#: simple-file-share.php
+msgid "File Share"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Advanced Settings"
+msgstr ""
+
+#: simple-file-share.php
+msgid "How to Use"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Create New Share"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Share Title"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Enter a title for the share"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Password Protection"
+msgstr ""
+
+#: simple-file-share.php
+msgid "None"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Yes"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Enter password"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Auto Generate"
+msgstr ""
+
+#: simple-file-share.php
+msgid "File Selection"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Drag and drop files here"
+msgstr ""
+
+#: simple-file-share.php
+msgid "or click to select files"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Upload and Create Share Link"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Active Share Links"
+msgstr ""
+
+#: simple-file-share.php
+msgid "No shared files yet."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Title"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Status"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Share URL"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Files"
+msgstr ""
+
+#: simple-file-share.php
+msgid "DL Count"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Created"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Actions"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Locked"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Public"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Copy"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Delete"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Are you sure you want to delete? Uploaded files will also be deleted."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Upload Complete!"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Files have been saved securely and a share link has been created."
+msgstr ""
+
+#: simple-file-share.php
+msgid "URL copied!"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Password copied!"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Password Authentication"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Password Protected Area"
+msgstr ""
+
+#: simple-file-share.php
+msgid "A password is required to access this content."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Incorrect password."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Authenticate and View Files"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Download as ZIP"
+msgstr ""
+
+#: simple-file-share.php
+msgid "File List"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Invalid access. Please download from the share page."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Access Denied"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Registered Shares"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Upload Folders"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Orphan Folders"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Orphan Records"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Orphan folders found"
+msgstr ""
+
+#: simple-file-share.php
+msgid "These folders are not registered in the database."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Delete Orphan Folders"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Orphan records found"
+msgstr ""
+
+#: simple-file-share.php
+msgid "These database records have no corresponding files."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Delete Orphan Records"
+msgstr ""
+
+#: simple-file-share.php
+msgid "No issues found"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Database and file system are properly synchronized."
+msgstr ""
+
+#: simple-file-share.php
+msgid "Database Share List"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Token"
+msgstr ""
+
+#: simple-file-share.php
+msgid "File Exists"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Password"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Upload Folder Path"
+msgstr ""
+
+#: simple-file-share.php
+msgid "Permission denied."
+msgstr ""
