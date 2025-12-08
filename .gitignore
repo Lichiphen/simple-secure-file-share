@@ -15,6 +15,3 @@ desktop.ini
 *~
 .vscode/
 .idea/
-
-# Compiled translation files (regenerate from .po files)
-*.mo
