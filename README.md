@@ -1,6 +1,6 @@
 # Simple Secure File Share
 
-[![Version](https://img.shields.io/badge/version-3.1.1-blue.svg)](https://github.com/lichiphen/simple-file-share)
+[![Version](https://img.shields.io/badge/version-3.1.2-blue.svg)](https://gitlab.com/lichiphen/simple-secure-file-share)
 [![License](https://img.shields.io/badge/license-Proprietary-orange.svg)](./LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.4%2B-purple.svg)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org)
@@ -96,7 +96,21 @@ WordPress Admin → File Share → **"Advanced Settings"**
 
 ---
 
-## 📁 File Structure
+## � Download
+
+Download the latest release package from GitLab Releases:
+
+📥 **[Download Latest Release (v3.1.2)](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
+
+The release package contains all necessary files for installation:
+- `simple-file-share.php` (Main plugin file)
+- `README.md` (Documentation)
+- `LICENSE` (License information)
+- `languages/` (Translation files)
+
+---
+
+## �📁 File Structure
 
 ```
 simple-file-share/
@@ -132,6 +146,11 @@ simple-file-share/
 ---
 
 ## 📝 Changelog
+
+### v3.1.2 (2025-12-15)
+- 📦 Added GitLab Releases for distribution
+- 📝 Updated README with download links
+- 🔧 Improved distribution workflow
 
 ### v3.1.1 (2025-12-08)
 - 🔧 PHP 8.4 compatibility
@@ -274,6 +293,20 @@ WordPress管理画面 → ファイル共有 → **「高度な設定」**
 
 ---
 
+## 📦 ダウンロード
+
+最新リリースパッケージはGitLab Releasesからダウンロードできます：
+
+📥 **[最新リリースをダウンロード (v3.1.2)](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
+
+リリースパッケージには、インストールに必要なすべてのファイルが含まれています：
+- `simple-file-share.php` (メインプラグインファイル)
+- `README.md` (ドキュメント)
+- `LICENSE` (ライセンス情報)
+- `languages/` (翻訳ファイル)
+
+---
+
 ## 📁 ファイル構成
 
 ```
@@ -310,6 +343,11 @@ simple-file-share/
 ---
 
 ## 📝 変更履歴
+
+### v3.1.2 (2025-12-15)
+- 📦 GitLab Releasesによる配布を追加
+- 📝 README にダウンロードリンクを追加
+- 🔧 配布ワークフローの改善
 
 ### v3.1.1 (2025-12-08)
 - 🔧 PHP 8.4対応
