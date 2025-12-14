@@ -96,21 +96,7 @@ WordPress Admin → File Share → **"Advanced Settings"**
 
 ---
 
-## � Download
-
-Download the latest release package from GitLab Releases:
-
-📥 **[Download Latest Release (v3.1.2)](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
-
-The release package contains all necessary files for installation:
-- `simple-file-share.php` (Main plugin file)
-- `README.md` (Documentation)
-- `LICENSE` (License information)
-- `languages/` (Translation files)
-
----
-
-## �📁 File Structure
+## 📁 File Structure
 
 ```
 simple-file-share/
@@ -295,9 +281,9 @@ WordPress管理画面 → ファイル共有 → **「高度な設定」**
 
 ## 📦 ダウンロード
 
-最新リリースパッケージはGitLab Releasesからダウンロードできます：
+**GitLab Releasesから最新版をダウンロードしてお使いください：**
 
-📥 **[最新リリースをダウンロード (v3.1.2)](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
+� **[GitLab Releases](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
 
 リリースパッケージには、インストールに必要なすべてのファイルが含まれています：
 - `simple-file-share.php` (メインプラグインファイル)
@@ -343,11 +329,6 @@ simple-file-share/
 ---
 
 ## 📝 変更履歴
-
-### v3.1.2 (2025-12-15)
-- 📦 GitLab Releasesによる配布を追加
-- 📝 README にダウンロードリンクを追加
-- 🔧 配布ワークフローの改善
 
 ### v3.1.1 (2025-12-08)
 - 🔧 PHP 8.4対応

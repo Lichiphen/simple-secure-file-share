@@ -3,7 +3,7 @@
  * Plugin Name: Simple Secure File Share
  * Plugin URI: https://github.com/Lichiphen/simple-secure-file-share
  * Description: 外部共有用にファイルを安全にアップロードし、専用URLを発行するプラグイン。ファイルは直接アクセスから保護され、Zipダウンロードに対応しています。
- * Version: 3.1.2
+ * Version: 3.1.1
  * Author: AI Generator, Direction：Lichiphen（X@Lichiphen）
  * Author URI: https://lichiphen.com
  * License: Lichiphen Proprietary License v1.0
