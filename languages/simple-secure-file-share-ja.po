@@ -127,6 +127,51 @@ msgstr "本当に削除しますか？アップロードしたファイルも削
 msgid "Delete"
 msgstr "削除"
 
+msgid "Edit"
+msgstr "編集"
+
+msgid "Edit Share"
+msgstr "共有を編集"
+
+msgid "Editing: "
+msgstr "編集中: "
+
+msgid "Password Setting"
+msgstr "パスワード設定"
+
+msgid "Keep current setting"
+msgstr "現在の設定を維持"
+
+msgid "Set/Change password"
+msgstr "パスワードを設定/変更"
+
+msgid "Remove password"
+msgstr "パスワードを解除"
+
+msgid "New Password"
+msgstr "新しいパスワード"
+
+msgid "Enter new password"
+msgstr "新しいパスワードを入力"
+
+msgid "Generate random password"
+msgstr "ランダムパスワードを生成"
+
+msgid "Click the button to generate a random password"
+msgstr "ボタンをクリックするとランダムなパスワードが生成されます"
+
+msgid "Random password generated"
+msgstr "ランダムパスワードを生成しました"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Save Changes"
+msgstr "変更を保存"
+
+msgid "Permission denied"
+msgstr "権限がありません"
+
 msgid "Upload Complete!"
 msgstr "アップロード完了！"
 

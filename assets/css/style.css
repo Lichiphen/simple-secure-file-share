@@ -1,0 +1,974 @@
+/**
+ * Simple Secure File Share - WordPress Plugin Styles
+ * Version: 4.0.0
+ * 
+ * CSS Variables for Light/Dark theme support
+ */
+
+/* ============================================
+   CSS Variables (Theme Tokens)
+   ============================================ */
+
+:root {
+    /* Light Theme (Default) */
+    --sfs-color-bg-primary: #f9fafb;
+    --sfs-color-bg-secondary: #ffffff;
+    --sfs-color-bg-tertiary: #f3f4f6;
+    --sfs-color-bg-hover: #e5e7eb;
+    
+    --sfs-color-text-primary: #1f2937;
+    --sfs-color-text-secondary: #4b5563;
+    --sfs-color-text-tertiary: #6b7280;
+    --sfs-color-text-muted: #9ca3af;
+    
+    --sfs-color-border: #e5e7eb;
+    --sfs-color-border-focus: #3b82f6;
+    
+    --sfs-color-accent: #3b82f6;
+    --sfs-color-accent-hover: #2563eb;
+    --sfs-color-accent-light: #eff6ff;
+    
+    --sfs-color-success: #10b981;
+    --sfs-color-success-bg: #ecfdf5;
+    --sfs-color-warning: #f59e0b;
+    --sfs-color-warning-bg: #fffbeb;
+    --sfs-color-error: #ef4444;
+    --sfs-color-error-bg: #fef2f2;
+    
+    --sfs-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --sfs-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --sfs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --sfs-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    --sfs-radius-sm: 0.25rem;
+    --sfs-radius-md: 0.5rem;
+    --sfs-radius-lg: 0.75rem;
+    --sfs-radius-xl: 1rem;
+    --sfs-radius-full: 9999px;
+    
+    --sfs-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    
+    --sfs-transition-fast: 0.15s ease;
+    --sfs-transition-normal: 0.3s ease;
+}
+
+/* Dark Theme */
+[data-theme="dark"],
+.sfs-dark {
+    --sfs-color-bg-primary: #111827;
+    --sfs-color-bg-secondary: #1f2937;
+    --sfs-color-bg-tertiary: #374151;
+    --sfs-color-bg-hover: #4b5563;
+    
+    --sfs-color-text-primary: #f9fafb;
+    --sfs-color-text-secondary: #d1d5db;
+    --sfs-color-text-tertiary: #9ca3af;
+    --sfs-color-text-muted: #6b7280;
+    
+    --sfs-color-border: #374151;
+    --sfs-color-border-focus: #60a5fa;
+    
+    --sfs-color-accent: #60a5fa;
+    --sfs-color-accent-hover: #3b82f6;
+    --sfs-color-accent-light: #1e3a5f;
+    
+    --sfs-color-success: #34d399;
+    --sfs-color-success-bg: #064e3b;
+    --sfs-color-warning: #fbbf24;
+    --sfs-color-warning-bg: #78350f;
+    --sfs-color-error: #f87171;
+    --sfs-color-error-bg: #7f1d1d;
+}
+
+/* Auto Dark Mode based on system preference */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --sfs-color-bg-primary: #111827;
+        --sfs-color-bg-secondary: #1f2937;
+        --sfs-color-bg-tertiary: #374151;
+        --sfs-color-bg-hover: #4b5563;
+        
+        --sfs-color-text-primary: #f9fafb;
+        --sfs-color-text-secondary: #d1d5db;
+        --sfs-color-text-tertiary: #9ca3af;
+        --sfs-color-text-muted: #6b7280;
+        
+        --sfs-color-border: #374151;
+        --sfs-color-border-focus: #60a5fa;
+        
+        --sfs-color-accent: #60a5fa;
+        --sfs-color-accent-hover: #3b82f6;
+        --sfs-color-accent-light: #1e3a5f;
+    }
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+.sfs-app *, .sfs-app *::before, .sfs-app *::after {
+    box-sizing: border-box;
+}
+
+.sfs-app {
+    font-family: var(--sfs-font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--sfs-color-text-primary);
+}
+
+.sfs-frontend {
+    font-family: var(--sfs-font-sans);
+    color: var(--sfs-color-text-primary);
+    background-color: var(--sfs-color-bg-primary);
+    min-height: 100vh;
+}
+
+/* ============================================
+   Cards
+   ============================================ */
+
+.sfs-card {
+    background-color: var(--sfs-color-bg-secondary);
+    border-radius: var(--sfs-radius-lg);
+    box-shadow: var(--sfs-shadow-lg);
+    overflow: hidden;
+}
+
+.sfs-card-header {
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, var(--sfs-color-accent) 0%, #4f46e5 100%);
+    color: white;
+}
+
+.sfs-card-body {
+    padding: 1.5rem 2rem;
+}
+
+/* ============================================
+   Forms
+   ============================================ */
+
+.sfs-form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--sfs-color-text-primary);
+    background-color: var(--sfs-color-bg-secondary);
+    border: 1px solid var(--sfs-color-border);
+    border-radius: var(--sfs-radius-md);
+    transition: border-color var(--sfs-transition-fast), box-shadow var(--sfs-transition-fast);
+}
+
+.sfs-form-input:focus {
+    outline: none;
+    border-color: var(--sfs-color-border-focus);
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.2);
+}
+
+.sfs-form-input::placeholder {
+    color: var(--sfs-color-text-muted);
+}
+
+/* Password mask */
+.sfs-masked {
+    -webkit-text-security: disc;
+    text-security: disc;
+    font-family: text-security-disc, sans-serif;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.sfs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    border: none;
+    border-radius: var(--sfs-radius-md);
+    cursor: pointer;
+    transition: all var(--sfs-transition-fast);
+}
+
+.sfs-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sfs-btn-primary {
+    color: white;
+    background-color: var(--sfs-color-accent);
+}
+
+.sfs-btn-primary:hover:not(:disabled) {
+    background-color: var(--sfs-color-accent-hover);
+    transform: translateY(-1px);
+}
+
+.sfs-btn-secondary {
+    color: var(--sfs-color-text-primary);
+    background-color: var(--sfs-color-bg-tertiary);
+    border: 1px solid var(--sfs-color-border);
+}
+
+.sfs-btn-secondary:hover:not(:disabled) {
+    background-color: var(--sfs-color-bg-hover);
+}
+
+.sfs-btn-danger {
+    color: white;
+    background-color: var(--sfs-color-error);
+}
+
+.sfs-btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+}
+
+.sfs-btn-success {
+    color: white;
+    background-color: var(--sfs-color-success);
+}
+
+.sfs-btn-dark {
+    color: white;
+    background-color: #1f2937;
+}
+
+.sfs-btn-dark:hover:not(:disabled) {
+    background-color: #111827;
+}
+
+.sfs-btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.sfs-btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+}
+
+.sfs-btn-block {
+    width: 100%;
+}
+
+/* ============================================
+   Drop Zone
+   ============================================ */
+
+.sfs-drop-zone {
+    position: relative;
+    padding: 3rem 2rem;
+    text-align: center;
+    border: 2px dashed var(--sfs-color-border);
+    border-radius: var(--sfs-radius-lg);
+    background-color: var(--sfs-color-bg-secondary);
+    cursor: pointer;
+    transition: all var(--sfs-transition-fast);
+}
+
+.sfs-drop-zone:hover {
+    border-color: var(--sfs-color-accent);
+    background-color: var(--sfs-color-accent-light);
+}
+
+.sfs-drop-zone.sfs-drag-over {
+    border-color: var(--sfs-color-accent);
+    background-color: var(--sfs-color-accent-light);
+    transform: scale(1.01);
+}
+
+.sfs-drop-zone-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    color: var(--sfs-color-text-muted);
+}
+
+.sfs-drop-zone-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* ============================================
+   File List (List View)
+   ============================================ */
+
+.sfs-file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sfs-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: var(--sfs-color-bg-secondary);
+    border: 1px solid var(--sfs-color-border);
+    border-radius: var(--sfs-radius-md);
+    margin-bottom: 0.5rem;
+    transition: all var(--sfs-transition-fast);
+}
+
+.sfs-file-item:hover {
+    box-shadow: var(--sfs-shadow-md);
+}
+
+.sfs-file-item:last-child {
+    margin-bottom: 0;
+}
+
+.sfs-file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.sfs-file-icon {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    color: var(--sfs-color-text-muted);
+}
+
+.sfs-file-name {
+    font-weight: 500;
+    color: var(--sfs-color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sfs-file-size {
+    font-size: 0.75rem;
+    color: var(--sfs-color-text-muted);
+}
+
+.sfs-file-remove {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    color: var(--sfs-color-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--sfs-radius-full);
+    cursor: pointer;
+    transition: all var(--sfs-transition-fast);
+}
+
+.sfs-file-remove:hover {
+    color: var(--sfs-color-error);
+    background-color: var(--sfs-color-error-bg);
+}
+
+/* ============================================
+   File Grid View
+   ============================================ */
+
+.sfs-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sfs-file-grid-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--sfs-color-bg-secondary);
+    border: 1px solid var(--sfs-color-border);
+    border-radius: var(--sfs-radius-lg);
+    transition: all var(--sfs-transition-fast);
+}
+
+.sfs-file-grid-item:hover {
+    box-shadow: var(--sfs-shadow-md);
+    transform: translateY(-2px);
+}
+
+.sfs-file-grid-preview {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    border-radius: var(--sfs-radius-md);
+    overflow: hidden;
+    background-color: var(--sfs-color-bg-tertiary);
+}
+
+.sfs-file-grid-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.sfs-file-grid-preview .sfs-file-icon-large {
+    width: 3rem;
+    height: 3rem;
+    color: var(--sfs-color-text-muted);
+}
+
+.sfs-file-grid-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--sfs-color-text-primary);
+    text-align: center;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sfs-file-grid-size {
+    font-size: 0.625rem;
+    color: var(--sfs-color-text-muted);
+    margin-top: 0.25rem;
+}
+
+.sfs-file-grid-remove {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sfs-color-error);
+    color: white;
+    border: none;
+    border-radius: var(--sfs-radius-full);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--sfs-transition-fast);
+}
+
+.sfs-file-grid-item:hover .sfs-file-grid-remove {
+    opacity: 1;
+}
+
+/* ============================================
+   View Toggle
+   ============================================ */
+
+.sfs-view-toggle {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--sfs-color-bg-tertiary);
+    border-radius: var(--sfs-radius-full);
+    padding: 0.25rem;
+}
+
+.sfs-view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: var(--sfs-color-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--sfs-radius-full);
+    cursor: pointer;
+    transition: all var(--sfs-transition-fast);
+}
+
+.sfs-view-toggle-btn:hover {
+    color: var(--sfs-color-text-primary);
+}
+
+.sfs-view-toggle-btn.active {
+    color: var(--sfs-color-accent);
+    background-color: var(--sfs-color-bg-secondary);
+    box-shadow: var(--sfs-shadow-sm);
+}
+
+/* ============================================
+   Progress Bar
+   ============================================ */
+
+.sfs-progress-wrapper {
+    margin-top: 1rem;
+}
+
+.sfs-progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sfs-color-text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.sfs-progress-bar {
+    width: 100%;
+    height: 0.625rem;
+    background-color: var(--sfs-color-bg-tertiary);
+    border-radius: var(--sfs-radius-full);
+    overflow: hidden;
+}
+
+.sfs-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--sfs-color-accent), #4f46e5);
+    border-radius: var(--sfs-radius-full);
+    transition: width var(--sfs-transition-fast);
+}
+
+/* ============================================
+   Table
+   ============================================ */
+
+.sfs-table-wrapper {
+    overflow-x: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.sfs-table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.sfs-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--sfs-color-text-secondary);
+    background-color: var(--sfs-color-bg-tertiary);
+    border-bottom: 1px solid var(--sfs-color-border);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--sfs-transition-fast);
+}
+
+.sfs-table th:hover {
+    background-color: var(--sfs-color-bg-hover);
+}
+
+.sfs-table th.sortable::after {
+    content: '↕';
+    margin-left: 0.5rem;
+    opacity: 0.3;
+}
+
+.sfs-table th.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.sfs-table th.sort-desc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.sfs-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--sfs-color-border);
+    color: var(--sfs-color-text-secondary);
+}
+
+.sfs-table tbody tr:hover {
+    background-color: var(--sfs-color-bg-tertiary);
+}
+
+.sfs-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ============================================
+   Badges
+   ============================================ */
+
+.sfs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--sfs-radius-full);
+}
+
+.sfs-badge-success {
+    color: var(--sfs-color-success);
+    background-color: var(--sfs-color-success-bg);
+}
+
+.sfs-badge-warning {
+    color: var(--sfs-color-warning);
+    background-color: var(--sfs-color-warning-bg);
+}
+
+.sfs-badge-error {
+    color: var(--sfs-color-error);
+    background-color: var(--sfs-color-error-bg);
+}
+
+.sfs-badge-muted {
+    color: var(--sfs-color-text-tertiary);
+    background-color: var(--sfs-color-bg-tertiary);
+}
+
+.sfs-badge-accent {
+    color: var(--sfs-color-accent);
+    background-color: var(--sfs-color-accent-light);
+}
+
+/* ============================================
+   Toast Notification
+   ============================================ */
+
+.sfs-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    color: white;
+    background-color: #1f2937;
+    border-radius: var(--sfs-radius-lg);
+    box-shadow: var(--sfs-shadow-xl);
+    z-index: 99999;
+    animation: sfs-toast-in 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+.sfs-toast.hiding {
+    animation: sfs-toast-out 0.3s ease-in forwards;
+}
+
+@keyframes sfs-toast-in {
+    from {
+        transform: translate(-50%, -40%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+@keyframes sfs-toast-out {
+    from {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+    to {
+        transform: translate(-50%, -60%);
+        opacity: 0;
+    }
+}
+
+/* ============================================
+   Modal
+   ============================================ */
+
+.sfs-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--sfs-transition-normal), visibility var(--sfs-transition-normal);
+}
+
+.sfs-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sfs-modal-content {
+    width: 100%;
+    max-width: 24rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: var(--sfs-color-bg-secondary);
+    border-radius: var(--sfs-radius-xl);
+    box-shadow: var(--sfs-shadow-xl);
+}
+
+.sfs-modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    border-radius: var(--sfs-radius-full);
+}
+
+.sfs-modal-icon.success {
+    color: var(--sfs-color-success);
+    background-color: var(--sfs-color-success-bg);
+}
+
+.sfs-modal-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--sfs-color-text-primary);
+}
+
+.sfs-modal-message {
+    margin: 0 0 1.5rem;
+    font-size: 0.875rem;
+    color: var(--sfs-color-text-secondary);
+}
+
+/* ============================================
+   Share Page Header
+   ============================================ */
+
+.sfs-share-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--sfs-color-accent) 0%, #4f46e5 100%);
+    color: white;
+}
+
+.sfs-share-header-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 0.25rem 0 0;
+}
+
+.sfs-share-header-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.sfs-share-header-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.sfs-share-header-icon {
+    width: 4rem;
+    height: 4rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--sfs-radius-full);
+}
+
+/* ============================================
+   Error Page
+   ============================================ */
+
+.sfs-error-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    background: var(--sfs-color-bg-primary);
+}
+
+.sfs-cat-mascot {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 20%;
+    border: 4px solid var(--sfs-color-accent);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+    animation: sfs-bounce 2s ease-in-out infinite;
+}
+
+@keyframes sfs-bounce {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    25% {
+        transform: translateY(-20px) scale(1.05);
+    }
+    50% {
+        transform: translateY(0) scale(0.95);
+    }
+    75% {
+        transform: translateY(-10px) scale(1.02);
+    }
+}
+
+.sfs-error-code {
+    font-size: 6rem;
+    font-weight: 800;
+    margin: 1.5rem 0 0;
+    background: linear-gradient(135deg, var(--sfs-color-accent) 0%, #a855f7 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: sfs-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes sfs-shimmer {
+    0%, 100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.2);
+    }
+}
+
+.sfs-error-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--sfs-color-text-primary);
+    margin: 0.5rem 0;
+}
+
+.sfs-error-message {
+    color: var(--sfs-color-text-secondary);
+    margin: 0.5rem 0 2rem;
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+.sfs-floating-stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.sfs-star {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--sfs-color-accent);
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: sfs-float 6s ease-in-out infinite;
+}
+
+.sfs-star:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+.sfs-star:nth-child(2) { left: 20%; top: 80%; animation-delay: 1s; }
+.sfs-star:nth-child(3) { left: 30%; top: 40%; animation-delay: 2s; }
+.sfs-star:nth-child(4) { left: 50%; top: 10%; animation-delay: 3s; }
+.sfs-star:nth-child(5) { left: 70%; top: 60%; animation-delay: 4s; }
+.sfs-star:nth-child(6) { left: 80%; top: 30%; animation-delay: 5s; }
+.sfs-star:nth-child(7) { left: 90%; top: 70%; animation-delay: 2.5s; }
+.sfs-star:nth-child(8) { left: 15%; top: 50%; animation-delay: 1.5s; }
+
+@keyframes sfs-float {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translateY(-20px) scale(1.5);
+        opacity: 0.6;
+    }
+}
+
+.sfs-paw-prints {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    opacity: 0.5;
+}
+
+.sfs-paw {
+    font-size: 1.5rem;
+    animation: sfs-pawStep 1.5s ease-in-out infinite;
+}
+
+.sfs-paw:nth-child(1) { animation-delay: 0s; }
+.sfs-paw:nth-child(2) { animation-delay: 0.3s; }
+.sfs-paw:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes sfs-pawStep {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.sfs-hidden { display: none !important; }
+.sfs-text-center { text-align: center; }
+.sfs-text-right { text-align: right; }
+.sfs-text-sm { font-size: 0.875rem; }
+.sfs-text-xs { font-size: 0.75rem; }
+.sfs-font-bold { font-weight: 700; }
+.sfs-font-medium { font-weight: 500; }
+.sfs-mt-2 { margin-top: 0.5rem; }
+.sfs-mt-4 { margin-top: 1rem; }
+.sfs-mt-6 { margin-top: 1.5rem; }
+.sfs-mb-2 { margin-bottom: 0.5rem; }
+.sfs-mb-4 { margin-bottom: 1rem; }
+.sfs-mb-6 { margin-bottom: 1.5rem; }
+.sfs-mb-8 { margin-bottom: 2rem; }
+.sfs-p-4 { padding: 1rem; }
+.sfs-p-6 { padding: 1.5rem; }
+.sfs-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sfs-flex { display: flex; }
+.sfs-flex-col { flex-direction: column; }
+.sfs-items-center { align-items: center; }
+.sfs-justify-center { justify-content: center; }
+.sfs-justify-between { justify-content: space-between; }
+.sfs-gap-2 { gap: 0.5rem; }
+.sfs-gap-4 { gap: 1rem; }
+
+/* ============================================
+   Color
+   ============================================ */
+.flex.items-center.space-x-4.mb-2 {
+    color: #333;
+}

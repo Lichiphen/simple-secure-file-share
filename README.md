@@ -1,8 +1,8 @@
 # Simple Secure File Share
 
-[![Version](https://img.shields.io/badge/version-3.1.2-blue.svg)](https://gitlab.com/lichiphen/simple-secure-file-share)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://gitlab.com/lichiphen/simple-secure-file-share)
 [![License](https://img.shields.io/badge/license-Proprietary-orange.svg)](./LICENSE)
-[![PHP](https://img.shields.io/badge/PHP-8.4%2B-purple.svg)](https://php.net)
+[![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org)
 
 **Author:** AI Generator, Direction: Lichiphen  
@@ -25,15 +25,23 @@ When an administrator uploads files, a dedicated sharing URL is generated. Files
 | Feature | Description |
 |---------|-------------|
 | 🔒 **Password Protection** | Set passwords on share links for authorized-only access |
+| 🔑 **Password Reset** | Reset passwords for existing share links |
 | 📊 **Download Counter** | Automatically count downloads to track usage |
 | 📦 **ZIP Download** | Bulk download multiple files as ZIP (supports Japanese filenames) |
 | 🛡️ **Direct Link Prevention** | Prevent unauthorized downloads via direct URL access |
+| 🌙 **Dark Mode Support** | Automatic theme switching based on system preference |
+| 🐱 **Cute Error Pages** | Friendly error pages with cat mascot animations |
+| 📸 **Image Preview** | Preview image files before uploading |
+| 📋 **List/Grid View** | Toggle between list and grid display modes |
+| 🔄 **Sortable Tables** | Sort share lists by title, date, download count |
+| 🗑️ **Individual File Deletion** | Delete files one by one after upload |
 | 🔧 **Advanced Settings** | Check database and file system integrity |
 | 📱 **Responsive Design** | Works great on PC and mobile devices |
+| 🌐 **Multi-language** | English and Japanese support |
 
 ---
 
-## � Installation
+## 📥 Installation
 
 1. Upload the plugin folder (`simple-file-share`) to `/wp-content/plugins/`
 2. Activate the plugin through the "Plugins" menu in WordPress
@@ -49,8 +57,9 @@ When an administrator uploads files, a dedicated sharing URL is generated. Files
 2. Enter a **"Share Title"** (e.g., "Documents for December 2024")
 3. Optionally enable **"Password Protection"**
 4. Drag & drop files to the file selection area or click to select
-5. Click **"Upload and Create Share Link"**
-6. Your share URL will be displayed
+5. **Toggle list/grid view** to preview files (images show thumbnails)
+6. Click **"Upload and Create Share Link"**
+7. Your share URL will be displayed
 
 ### Step 2: Share the Link
 
@@ -63,6 +72,19 @@ When an administrator uploads files, a dedicated sharing URL is generated. Files
 - Recipient accesses the share URL
 - Enter password if protected
 - Download as ZIP or individual files
+
+---
+
+## 🔑 Password Management
+
+### Setting a Password
+- Enable password protection when creating a new share
+- Use the auto-generate button for secure passwords
+
+### Resetting a Password
+1. Go to **File Share** → **Active Shares**
+2. Click the **"Edit"** button next to the share
+3. Enter a new password and save
 
 ---
 
@@ -93,6 +115,28 @@ WordPress Admin → File Share → **"Advanced Settings"**
 #### 📋 Database Overview
 - View all share information
 - Check ID, Title, Token, File Status, Password, DL Count, Created Date, Status
+- **Sortable columns** - Click headers to sort
+
+---
+
+## 🌙 Dark Mode Support
+
+The plugin automatically detects the system's dark mode preference and adjusts the theme accordingly:
+
+- **Light Mode**: Clean and bright interface
+- **Dark Mode**: Eye-friendly dark interface
+
+The theme switching is seamless and requires no manual configuration.
+
+---
+
+## 🐱 Cute Error Pages
+
+When an error occurs (such as expired link, wrong password, or file not found), users will see a friendly error page featuring:
+
+- 🐾 Animated cat mascot
+- 📝 Clear error message in user's language
+- 🔗 Helpful navigation options
 
 ---
 
@@ -102,14 +146,57 @@ WordPress Admin → File Share → **"Advanced Settings"**
 simple-file-share/
 ├── simple-file-share.php    # Main plugin file
 ├── README.md                 # This file
+├── CHANGELOG.md              # Change history
 ├── LICENSE                   # License file
+├── assets/                   # CSS and JavaScript files
+│   ├── css/
+│   │   └── style.css         # All styles with CSS variables
+│   ├── js/
+│   │   └── app.js            # Frontend/Backend scripts
+│   └── images/
+│       └── cat-mascot.png    # Error page mascot
 ├── languages/                # Translation files
 │   ├── simple-secure-file-share.pot
+│   ├── simple-secure-file-share-en_US.po
+│   ├── simple-secure-file-share-en_US.mo
 │   ├── simple-secure-file-share-ja.po
 │   └── simple-secure-file-share-ja.mo
 └── protected-uploads/        # Upload file storage
     └── [token]/              # Folder for each share
         └── [files]           # Actual files
+```
+
+---
+
+## 🎨 CSS Architecture
+
+The CSS follows a modular architecture using CSS Custom Properties:
+
+### CSS Variables
+
+```css
+:root {
+  /* Colors */
+  --sfs-color-accent: #3b82f6;
+  --sfs-color-success: #10b981;
+  --sfs-color-error: #ef4444;
+  
+  /* Backgrounds */
+  --sfs-color-bg-primary: #f9fafb;
+  --sfs-color-bg-secondary: #ffffff;
+  
+  /* Text */
+  --sfs-color-text-primary: #1f2937;
+  --sfs-color-text-secondary: #4b5563;
+}
+
+/* Dark Mode Override */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sfs-color-bg-primary: #111827;
+    --sfs-color-text-primary: #f9fafb;
+  }
+}
 ```
 
 ---
@@ -121,8 +208,9 @@ simple-file-share/
 - Files can only be downloaded through the plugin
 
 ### Password Protection
-- Passwords are stored hashed (encrypted)
+- Passwords are stored hashed (bcrypt encryption)
 - Cookie authentication valid for 1 hour
+- Secure password input with autocomplete prevention
 
 ### Direct Link Prevention
 - Referer check
@@ -131,33 +219,33 @@ simple-file-share/
 
 ---
 
+## 🌐 Internationalization (i18n)
+
+The plugin supports full internationalization with the following languages:
+
+| Language | Code | Status |
+|----------|------|--------|
+| English | `en_US` | ✅ Complete |
+| Japanese | `ja` | ✅ Complete |
+
+---
+
 ## 📝 Changelog
 
-### v3.1.2 (2025-12-15)
-- 📦 Added GitLab Releases for distribution
-- 📝 Updated README with download links
-- 🔧 Improved distribution workflow
+See [CHANGELOG.md](./CHANGELOG.md) for full version history.
 
-### v3.1.1 (2025-12-08)
-- 🔧 PHP 8.4 compatibility
-- 🔧 Updated contact & copyright information
-- 🆕 Full internationalization (admin & frontend)
-
-### v3.0.0 (2025-12-07)
-- 🆕 Added Advanced Settings page
-- 🆕 Added download counter feature
-- 🆕 Added direct link prevention
-- 🆕 Added How to Use page
-- 🆕 Multi-language support (Japanese/English)
-- 🔧 Improved table UI (word wrap, horizontal scroll)
-- 🔧 Centered toast notifications
-
-### v2.6.0
-- Improved password protection
-- Enhanced autocomplete prevention
-
-### v2.3.0
-- CSS text-security password mask implementation
+### v4.0.0 (Latest)
+- 🌙 Added Dark Mode support
+- 🐱 Added cute error pages with cat mascot
+- 📸 Added image preview in upload form
+- 📋 Added list/grid view toggle
+- 🔄 Added sortable table columns
+- 🗑️ Added individual file deletion
+- 🔑 Added password reset functionality
+- 🎨 Restructured CSS architecture with CSS variables
+- 📦 Modular assets organization
+- 🌐 Enhanced i18n support (English/Japanese only)
+- 🔧 PHP 7.4+ compatibility
 
 ---
 
@@ -166,7 +254,7 @@ simple-file-share/
 If you encounter issues, please check:
 
 1. Plugin is up to date
-2. WordPress 5.0+ and PHP 8.4+
+2. WordPress 5.0+ and PHP 7.4+
 3. Run integrity check in "Advanced Settings"
 
 **Contact:**
@@ -185,10 +273,7 @@ Lichiphen Proprietary License v1.0
 - ⚠️ Copyright notice required when redistributing
 - ❌ Removal of copyright notice prohibited
 
-**If you absolutely need to remove the copyright notice, we can arrange this for a fee.**  
-Contact: [https://lichiphen.com](https://lichiphen.com) or [X (Twitter)](https://x.com/Lichiphen)
-
-Copyright (c) 2025 Lichiphen. All rights reserved.
+Copyright (c) 2025-2026 Lichiphen. All rights reserved.
 
 ---
 ---
@@ -208,11 +293,19 @@ Copyright (c) 2025 Lichiphen. All rights reserved.
 | 機能 | 説明 |
 |------|------|
 | 🔒 **パスワード保護** | 共有リンクにパスワードを設定可能 |
+| 🔑 **パスワード再設定** | 既存の共有リンクのパスワードを変更可能 |
 | 📊 **ダウンロードカウント** | ダウンロード回数を自動でカウント |
-| 📦 **ZIPダウンロード** | 複数ファイルをZIPで一括ダウンロード |
+| 📦 **ZIPダウンロード** | 複数ファイルをZIPで一括ダウンロード（日本語ファイル名対応） |
 | 🛡️ **直リンク防止** | ブラウザでの直叩きを防止 |
+| 🌙 **ダークモード対応** | システム設定に応じた自動テーマ切り替え |
+| 🐱 **可愛いエラーページ** | 猫マスコットアニメーション付きのフレンドリーなエラーページ |
+| 📸 **画像プレビュー** | アップロード前に画像ファイルをプレビュー表示 |
+| 📋 **リスト/グリッド表示** | リスト表示とグリッド表示の切り替え |
+| 🔄 **ソート機能** | タイトル、日付、ダウンロード数で並び替え |
+| 🗑️ **個別ファイル削除** | アップロード後も1ファイルずつ削除可能 |
 | 🔧 **高度な設定** | データベースとファイルの整合性チェック |
 | 📱 **レスポンシブ対応** | PC・スマートフォンで快適に使用可能 |
+| 🌐 **多言語対応** | 英語・日本語をサポート |
 
 ---
 
@@ -232,8 +325,9 @@ Copyright (c) 2025 Lichiphen. All rights reserved.
 2. **「共有タイトル」** を入力（例：「2024年12月の資料」）
 3. 必要に応じて **「パスワード保護」** を「あり」に設定
 4. **ファイル選択エリア** にファイルをドラッグ＆ドロップ、またはクリックして選択
-5. **「アップロードして共有リンクを作成」** ボタンをクリック
-6. 完了後、共有URLが表示されます
+5. **リスト/グリッド表示を切り替え** てファイルをプレビュー（画像はサムネイル表示）
+6. **「アップロードして共有リンクを作成」** ボタンをクリック
+7. 完了後、共有URLが表示されます
 
 ### ステップ2：共有リンクを相手に伝える
 
@@ -246,6 +340,19 @@ Copyright (c) 2025 Lichiphen. All rights reserved.
 - 相手は共有URLにアクセス
 - パスワード保護がある場合はパスワードを入力
 - 「ZIPでダウンロード」または個別ファイルの「DL」ボタンでダウンロード
+
+---
+
+## 🔑 パスワード管理
+
+### パスワードの設定
+- 新規共有作成時にパスワード保護を有効化
+- 自動生成ボタンで安全なパスワードを作成
+
+### パスワードの再設定
+1. **ファイル共有** → **有効な共有リンク** に移動
+2. 共有の横にある **「編集」** ボタンをクリック
+3. 新しいパスワードを入力して保存
 
 ---
 
@@ -276,6 +383,28 @@ WordPress管理画面 → ファイル共有 → **「高度な設定」**
 #### 📋 データベース内容一覧
 - 全ての共有情報を一覧表示
 - ID、タイトル、トークン、ファイル有無、パスワード有無、DL数、作成日、ステータスを確認可能
+- **ソート可能** - ヘッダーをクリックして並び替え
+
+---
+
+## 🌙 ダークモード対応
+
+プラグインはシステムのダークモード設定を自動検出し、テーマを適用します：
+
+- **ライトモード**: クリーンで明るいインターフェース
+- **ダークモード**: 目に優しいダークインターフェース
+
+テーマの切り替えはシームレスで、手動設定は不要です。
+
+---
+
+## 🐱 可愛いエラーページ
+
+エラー発生時（リンク期限切れ、パスワード間違い、ファイル未検出など）には、フレンドリーなエラーページが表示されます：
+
+- 🐾 アニメーション付き猫マスコット
+- 📝 ユーザーの言語で明確なエラーメッセージ
+- 🔗 便利なナビゲーションオプション
 
 ---
 
@@ -283,13 +412,7 @@ WordPress管理画面 → ファイル共有 → **「高度な設定」**
 
 **GitLab Releasesから最新版をダウンロードしてお使いください：**
 
-� **[GitLab Releases](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
-
-リリースパッケージには、インストールに必要なすべてのファイルが含まれています：
-- `simple-file-share.php` (メインプラグインファイル)
-- `README.md` (ドキュメント)
-- `LICENSE` (ライセンス情報)
-- `languages/` (翻訳ファイル)
+📥 **[GitLab Releases](https://gitlab.com/lichiphen/simple-secure-file-share/-/releases)**
 
 ---
 
@@ -299,14 +422,57 @@ WordPress管理画面 → ファイル共有 → **「高度な設定」**
 simple-file-share/
 ├── simple-file-share.php    # メインプラグインファイル
 ├── README.md                 # このファイル
+├── CHANGELOG.md              # 変更履歴
 ├── LICENSE                   # ライセンスファイル
+├── assets/                   # CSSとJavaScriptファイル
+│   ├── css/
+│   │   └── style.css         # CSS変数を使用した全スタイル
+│   ├── js/
+│   │   └── app.js            # フロント/バックエンドスクリプト
+│   └── images/
+│       └── cat-mascot.png    # エラーページ用猫マスコット
 ├── languages/                # 翻訳ファイル
 │   ├── simple-secure-file-share.pot
+│   ├── simple-secure-file-share-en_US.po
+│   ├── simple-secure-file-share-en_US.mo
 │   ├── simple-secure-file-share-ja.po
 │   └── simple-secure-file-share-ja.mo
 └── protected-uploads/        # アップロードファイル保存先
     └── [token]/              # 各共有のフォルダ
         └── [files]           # 実際のファイル
+```
+
+---
+
+## 🎨 CSSアーキテクチャ
+
+CSSはCSS変数（カスタムプロパティ）を使用したモジュラー構成になっています。
+
+### CSS変数
+
+```css
+:root {
+  /* カラー */
+  --sfs-color-accent: #3b82f6;
+  --sfs-color-success: #10b981;
+  --sfs-color-error: #ef4444;
+  
+  /* 背景 */
+  --sfs-color-bg-primary: #f9fafb;
+  --sfs-color-bg-secondary: #ffffff;
+  
+  /* テキスト */
+  --sfs-color-text-primary: #1f2937;
+  --sfs-color-text-secondary: #4b5563;
+}
+
+/* ダークモード時のオーバーライド */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sfs-color-bg-primary: #111827;
+    --sfs-color-text-primary: #f9fafb;
+  }
+}
 ```
 
 ---
@@ -318,8 +484,9 @@ simple-file-share/
 - ファイルはプラグイン経由でのみダウンロード可能
 
 ### パスワード保護
-- パスワードは暗号化（ハッシュ化）して保存
+- パスワードはbcryptで暗号化（ハッシュ化）して保存
 - Cookie認証により1時間有効
+- オートコンプリート防止機能付きの安全なパスワード入力
 
 ### 直リンク防止
 - リファラーチェック
@@ -328,28 +495,33 @@ simple-file-share/
 
 ---
 
+## 🌐 国際化対応（i18n）
+
+プラグインは完全な国際化対応しており、以下の言語をサポートしています：
+
+| 言語 | コード | ステータス |
+|------|--------|-----------|
+| English | `en_US` | ✅ 完了 |
+| 日本語 | `ja` | ✅ 完了 |
+
+---
+
 ## 📝 変更履歴
 
-### v3.1.1 (2025-12-08)
-- 🔧 PHP 8.4対応
-- 🔧 連絡先・著作権情報の更新
-- 🆕 全ページの国際化対応（管理画面・フロントエンド）
+詳細なバージョン履歴は[CHANGELOG.md](./CHANGELOG.md)をご覧ください。
 
-### v3.0.0 (2025-12-07)
-- 🆕 高度な設定ページを追加
-- 🆕 ダウンロード回数カウント機能を追加
-- 🆕 直リンク防止機能を追加
-- 🆕 使い方ページを追加
-- 🆕 多言語対応（日本語/英語）
-- 🔧 テーブルUIの改善（タイトル折り返し、横スクロール対応）
-- 🔧 トースト通知を画面中央に変更
-
-### v2.6.0
-- パスワード保護機能の改善
-- オートコンプリート防止機能の強化
-
-### v2.3.0
-- CSS text-securityによるパスワードマスク実装
+### v4.0.0（最新）
+- 🌙 ダークモード対応を追加
+- 🐱 猫マスコット付き可愛いエラーページを追加
+- 📸 アップロードフォームに画像プレビュー機能を追加
+- 📋 リスト/グリッド表示切り替えを追加
+- 🔄 テーブルのソート機能を追加
+- 🗑️ 個別ファイル削除機能を追加
+- 🔑 パスワード再設定機能を追加
+- 🎨 CSS変数を使用したCSSアーキテクチャの再構成
+- 📦 アセットのモジュラー構成
+- 🌐 i18nサポートの強化（英語・日本語のみ）
+- 🔧 PHP 7.4+互換性
 
 ---
 
@@ -358,7 +530,7 @@ simple-file-share/
 問題が発生した場合は、以下をご確認ください：
 
 1. プラグインが最新バージョンであること
-2. WordPress 5.0以上、PHP 8.4以上であること
+2. WordPress 5.0以上、PHP 7.4以上であること
 3. 「高度な設定」で整合性チェックを実行
 
 **お問い合わせ:**
@@ -377,7 +549,4 @@ Lichiphen Proprietary License v1.0
 - ⚠️ 再配布時は著作権表示必須
 - ❌ 著作権表示の削除禁止
 
-**著作権表示をどうしても削除したい場合は、有償にて対応いたします。**  
-お問い合わせ: [https://lichiphen.com](https://lichiphen.com) または [X (Twitter)](https://x.com/Lichiphen)
-
-Copyright (c) 2025 Lichiphen. All rights reserved.
+Copyright (c) 2025-2026 Lichiphen. All rights reserved.

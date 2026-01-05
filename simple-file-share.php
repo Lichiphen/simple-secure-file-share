@@ -3,7 +3,7 @@
  * Plugin Name: Simple Secure File Share
  * Plugin URI: https://github.com/Lichiphen/simple-secure-file-share
  * Description: 外部共有用にファイルを安全にアップロードし、専用URLを発行するプラグイン。ファイルは直接アクセスから保護され、Zipダウンロードに対応しています。
- * Version: 3.1.1
+ * Version: 4.0.0
  * Author: AI Generator, Direction：Lichiphen（X@Lichiphen）
  * Author URI: https://lichiphen.com
  * License: Lichiphen Proprietary License v1.0
@@ -11,16 +11,16 @@
  * Text Domain: simple-secure-file-share
  * Domain Path: /languages
  * Requires at least: 5.0
- * Requires PHP: 8.4
+ * Requires PHP: 7.4
  * 
  * @package SimpleSecureFileShare
- * @copyright 2025 Lichiphen. All rights reserved.
+ * @copyright 2025-2026 Lichiphen. All rights reserved.
  * 
  * ============================================================================
  * LICHIPHEN PROPRIETARY LICENSE v1.0
  * ============================================================================
  * 
- * Copyright (c) 2025 Lichiphen. All rights reserved.
+ * Copyright (c) 2025-2026 Lichiphen. All rights reserved.
  * Website: https://lichiphen.com | X (Twitter): https://x.com/Lichiphen
  * 
  * このソフトウェアおよび関連ドキュメントファイル（以下「本ソフトウェア」）の
@@ -80,9 +80,166 @@ class Simple_File_Share {
         // 高度な設定用AJAXハンドラ
         add_action('admin_post_sfs_cleanup_orphan', array($this, 'handle_cleanup_orphan'));
         add_action('admin_post_sfs_cleanup_db', array($this, 'handle_cleanup_db'));
+        add_action('admin_post_sfs_update_password', array($this, 'handle_update_password_post'));
         
         // 多言語対応
         add_action('plugins_loaded', array($this, 'load_textdomain'));
+        
+        // 管理画面用アセット読み込み
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        
+        // 個別ファイル削除AJAXハンドラ
+        add_action('wp_ajax_sfs_delete_single_file', array($this, 'handle_delete_single_file'));
+        
+        // パスワード再設定AJAXハンドラ
+        add_action('wp_ajax_sfs_update_password', array($this, 'handle_update_password'));
+
+        // 画像取得用AJAXハンドラ（ログイン有無に関わらずアクセス可能だがトークン検証必須）
+        add_action('wp_ajax_sfs_get_image', array($this, 'handle_get_image'));
+        add_action('wp_ajax_nopriv_sfs_get_image', array($this, 'handle_get_image'));
+    }
+    
+    /**
+     * 管理画面用アセットの読み込み
+     */
+    public function enqueue_admin_assets($hook) {
+        // プラグインページのみで読み込み
+        if (strpos($hook, 'simple-file-share') === false) {
+            return;
+        }
+        
+        // カスタムCSS
+        wp_enqueue_style(
+            'sfs-admin-style',
+            plugin_dir_url(__FILE__) . 'assets/css/style.css',
+            array(),
+            '4.0.0'
+        );
+        
+        // カスタムJS
+        wp_enqueue_script(
+            'sfs-admin-script',
+            plugin_dir_url(__FILE__) . 'assets/js/app.js',
+            array(),
+            '4.0.0',
+            true
+        );
+        
+        // 翻訳文字列をJSに渡す
+        wp_localize_script('sfs-admin-script', 'sfsI18n', array(
+            'urlCopied' => __('URL copied!', 'simple-secure-file-share'),
+            'copyFailed' => __('Copy failed', 'simple-secure-file-share'),
+            'passwordCopied' => __('Password copied!', 'simple-secure-file-share'),
+            'hidePassword' => __('Hide password', 'simple-secure-file-share'),
+            'showPassword' => __('Show password', 'simple-secure-file-share'),
+            'delete' => __('Delete', 'simple-secure-file-share'),
+            'selectFiles' => __('Please select at least one file.', 'simple-secure-file-share'),
+            'enterTitle' => __('Please enter a title.', 'simple-secure-file-share'),
+            'enterPassword' => __('Please enter a password.', 'simple-secure-file-share'),
+            'uploading' => __('Uploading...', 'simple-secure-file-share'),
+            'uploadButton' => __('Upload and Create Share Link', 'simple-secure-file-share'),
+            'uploadComplete' => __('Upload complete!', 'simple-secure-file-share'),
+            'error' => __('Error: ', 'simple-secure-file-share'),
+            'parseError' => __('Failed to parse server response.', 'simple-secure-file-share'),
+            'networkError' => __('Network error occurred.', 'simple-secure-file-share'),
+            'confirmDelete' => __('Are you sure you want to delete this file?', 'simple-secure-file-share'),
+        ));
+        
+        // AJAX URL
+        wp_localize_script('sfs-admin-script', 'sfsAjax', array(
+            'url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('sfs_ajax_nonce')
+        ));
+    }
+    
+    /**
+     * 個別ファイル削除ハンドラ
+     */
+    public function handle_delete_single_file() {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied.', 'simple-secure-file-share'));
+        }
+        
+        check_ajax_referer('sfs_ajax_nonce', 'nonce');
+        
+        $share_id = intval($_POST['share_id']);
+        $file_name = sanitize_file_name($_POST['file_name']);
+        
+        $token = get_post_meta($share_id, 'sfs_token', true);
+        $files = get_post_meta($share_id, 'sfs_files', true);
+        
+        if (!$token || !$files) {
+            wp_send_json_error(__('Share not found.', 'simple-secure-file-share'));
+        }
+        
+        // ファイルを検索して削除
+        $new_files = array();
+        $file_deleted = false;
+        
+        foreach ($files as $file) {
+            if ($file['system_name'] === $file_name) {
+                $file_path = $this->upload_dir . $token . '/' . $file['system_name'];
+                if (file_exists($file_path)) {
+                    unlink($file_path);
+                }
+                $file_deleted = true;
+            } else {
+                $new_files[] = $file;
+            }
+        }
+        
+        if (!$file_deleted) {
+            wp_send_json_error(__('File not found.', 'simple-secure-file-share'));
+        }
+        
+        // ファイルリストを更新
+        update_post_meta($share_id, 'sfs_files', $new_files);
+        
+        // ファイルが0になった場合は共有自体を削除
+        if (empty($new_files)) {
+            $dir = $this->upload_dir . $token . '/';
+            if (is_dir($dir)) {
+                rmdir($dir);
+            }
+            wp_delete_post($share_id, true);
+            wp_send_json_success(array('deleted_share' => true));
+        }
+        
+        wp_send_json_success(array('remaining_files' => count($new_files)));
+    }
+    
+    /**
+     * パスワード更新ハンドラ
+     */
+    public function handle_update_password() {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied.', 'simple-secure-file-share'));
+        }
+        
+        check_ajax_referer('sfs_ajax_nonce', 'nonce');
+        
+        $share_id = intval($_POST['share_id']);
+        $new_password = isset($_POST['password']) ? $_POST['password'] : '';
+        $remove_password = isset($_POST['remove_password']) && $_POST['remove_password'] === 'true';
+        
+        $token = get_post_meta($share_id, 'sfs_token', true);
+        
+        if (!$token) {
+            wp_send_json_error(__('Share not found.', 'simple-secure-file-share'));
+        }
+        
+        if ($remove_password) {
+            delete_post_meta($share_id, 'sfs_password_hash');
+            wp_send_json_success(array('message' => __('Password removed.', 'simple-secure-file-share')));
+        } else if (!empty($new_password)) {
+            require_once ABSPATH . WPINC . '/class-phpass.php';
+            $wp_hasher = new PasswordHash(8, true);
+            $hash = $wp_hasher->HashPassword(trim($new_password));
+            update_post_meta($share_id, 'sfs_password_hash', $hash);
+            wp_send_json_success(array('message' => __('Password updated.', 'simple-secure-file-share')));
+        } else {
+            wp_send_json_error(__('Password is required.', 'simple-secure-file-share'));
+        }
     }
     
     /**
@@ -116,6 +273,23 @@ class Simple_File_Share {
         }
 
         $this->add_rewrite_rules();
+        // アップロードディレクトリの作成と保護
+        if (!file_exists($this->upload_dir)) {
+            wp_mkdir_p($this->upload_dir);
+        }
+
+        // .htaccessの作成（Apache用）: すべての直接アクセスを拒否
+        $htaccess_path = $this->upload_dir . '.htaccess';
+        if (!file_exists($htaccess_path)) {
+            $rules = "Order Deny,Allow\nDeny from all\n";
+            file_put_contents($htaccess_path, $rules);
+        }
+        
+        // index.php (ディレクトリリスティング防止)
+        if (!file_exists($this->upload_dir . 'index.php')) {
+            file_put_contents($this->upload_dir . 'index.php', '<?php // Silence is golden');
+        }
+
         flush_rewrite_rules();
     }
 
@@ -187,26 +361,122 @@ class Simple_File_Share {
      */
     public function render_admin_page() {
         if (!current_user_can('manage_options')) return;
+        // ソートパラメータを取得
+        $orderby = isset($_GET['orderby']) ? sanitize_text_field($_GET['orderby']) : 'date';
+        $order = isset($_GET['order']) ? sanitize_text_field($_GET['order']) : 'desc';
+        $valid_orderby = array('title', 'date');
+        $valid_order = array('asc', 'desc');
+        if (!in_array($orderby, $valid_orderby)) $orderby = 'date';
+        if (!in_array($order, $valid_order)) $order = 'desc';
         
         $shares = get_posts(array(
             'post_type' => 'sfs_share',
             'posts_per_page' => -1,
             'post_status' => 'publish',
+            'orderby' => $orderby,
+            'order' => $order,
         ));
+        
+        // メタフィールドでソートする場合は手動ソート / Sort by meta field if needed
+        $sort_by_meta = isset($_GET['orderby']) && in_array($_GET['orderby'], array('status', 'downloads', 'files'));
+        if ($sort_by_meta && !empty($shares)) {
+            $sort_field = sanitize_text_field($_GET['orderby']);
+            usort($shares, function($a, $b) use ($sort_field, $order) {
+                if ($sort_field === 'downloads') {
+                    $val_a = intval(get_post_meta($a->ID, 'sfs_download_count', true));
+                    $val_b = intval(get_post_meta($b->ID, 'sfs_download_count', true));
+                } elseif ($sort_field === 'files') {
+                    $files_a = get_post_meta($a->ID, 'sfs_files', true);
+                    $files_b = get_post_meta($b->ID, 'sfs_files', true);
+                    $val_a = is_array($files_a) ? count($files_a) : 0;
+                    $val_b = is_array($files_b) ? count($files_b) : 0;
+                } else { // status
+                    $val_a = !empty(get_post_meta($a->ID, 'sfs_password_hash', true)) ? 1 : 0;
+                    $val_b = !empty(get_post_meta($b->ID, 'sfs_password_hash', true)) ? 1 : 0;
+                }
+                $result = $val_a <=> $val_b;
+                return $order === 'desc' ? -$result : $result;
+            });
+        }
 
         ?>
         <div class="wrap">
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 .sfs-app h1, .sfs-app h2, .sfs-app h3 { margin-bottom: 0.5em; font-weight: bold; }
-                .sfs-app input[type=text], .sfs-app input[type=password] { border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px; }
+                .sfs-app input[type=text], .sfs-app input[type=password] { border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px; color: #333; background: #fff; }
                 .sfs-drag-over { background-color: #eff6ff !important; border-color: #3b82f6 !important; }
                 
                 /* パスワードマスク用CSS (text-security) */
                 .sfs-masked {
                     -webkit-text-security: disc;
                     text-security: disc;
-                    font-family: text-security-disc, sans-serif; /* Fallback attempt */
+                    font-family: text-security-disc, sans-serif;
+                    color: #333 !important;
+                }
+                
+                /* ファイルリスト表示制御 / File list display control */
+                .sfs-hidden { display: none !important; }
+                
+                /* テーブルラッパー / Table wrapper - 600px未満でのみ横スクロール */
+                .sfs-table-wrapper { margin: 0 -1.5rem; padding: 0 1.5rem; }
+                @media (max-width: 599px) {
+                    .sfs-table-wrapper { overflow-x: auto; }
+                    .sfs-table-wrapper table { min-width: 600px; }
+                }
+                
+                /* ファイルリストアイテム */
+                .sfs-file-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0.75rem;
+                    background: #f9fafb;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 0.5rem;
+                    margin-bottom: 0.5rem;
+                }
+                .sfs-file-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    min-width: 0;
+                    flex: 1;
+                }
+                .sfs-file-name {
+                    font-weight: 500;
+                    color: #374151;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .sfs-file-size {
+                    font-size: 0.75rem;
+                    color: #9ca3af;
+                }
+                .sfs-file-remove {
+                    background: none;
+                    border: none;
+                    color: #ef4444;
+                    cursor: pointer;
+                    padding: 0.25rem;
+                }
+                .sfs-file-remove:hover {
+                    color: #dc2626;
+                }
+                .sfs-truncate {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                
+                /* 画像プレビュー */
+                .sfs-file-preview-img {
+                    width: 40px;
+                    height: 40px;
+                    object-fit: cover;
+                    border-radius: 4px;
+                    border: 1px solid #e5e7eb;
                 }
                 
                 /* トースト通知アニメーション（画面中央） */
@@ -318,7 +588,7 @@ class Simple_File_Share {
                             <input type="file" name="files[]" id="sfs-submission-input" multiple class="hidden">
 
                             <!-- ファイルリスト -->
-                            <div id="sfs-file-list-container" class="mt-4 hidden">
+                            <div id="sfs-file-list-container" class="mt-4 sfs-hidden">
                                 <div class="flex justify-between items-center mb-2">
                                     <p class="text-sm font-bold text-gray-700"><?php _e('Files waiting to upload:', 'simple-secure-file-share'); ?></p>
                                     <button type="button" id="sfs-clear-all" class="text-xs text-red-500 hover:underline"><?php _e('Clear all', 'simple-secure-file-share'); ?></button>
@@ -328,7 +598,7 @@ class Simple_File_Share {
                         </div>
 
                         <!-- プログレスバー -->
-                        <div id="sfs-progress-wrapper" class="hidden mt-4">
+                        <div id="sfs-progress-wrapper" class="sfs-hidden mt-4">
                             <div class="flex justify-between text-xs font-semibold text-gray-600 mb-1">
                                 <span><?php _e('Uploading...', 'simple-secure-file-share'); ?></span>
                                 <span id="sfs-progress-text">0%</span>
@@ -349,16 +619,54 @@ class Simple_File_Share {
                 <?php if (empty($shares)): ?>
                     <p class="text-gray-500"><?php _e('No shared files yet.', 'simple-secure-file-share'); ?></p>
                 <?php else: ?>
-                    <div class="overflow-x-auto -mx-6 px-6">
-                        <table class="w-full text-sm text-left text-gray-500 border-collapse" style="min-width: 800px;">
+                    <div class="sfs-table-wrapper">
+                        <table class="w-full text-sm text-left text-gray-500 border-collapse">
                             <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                                 <tr>
-                                    <th class="px-4 py-3 border-b" style="min-width: 120px; max-width: 150px;"><?php _e('Title', 'simple-secure-file-share'); ?></th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap"><?php _e('Status', 'simple-secure-file-share'); ?></th>
-                                    <th class="px-4 py-3 border-b" style="min-width: 280px;"><?php _e('Share URL', 'simple-secure-file-share'); ?></th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center"><?php _e('Files', 'simple-secure-file-share'); ?></th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center"><?php _e('DL Count', 'simple-secure-file-share'); ?></th>
-                                    <th class="px-4 py-3 border-b whitespace-nowrap"><?php _e('Created', 'simple-secure-file-share'); ?></th>
+                                    <?php 
+                                    $current_url = admin_url('admin.php?page=simple-file-share');
+                                    ?>
+                                    <th class="px-4 py-3 border-b" style="min-width: 100px;">
+                                        <a href="<?php echo esc_url(add_query_arg(array('orderby' => 'title', 'order' => ($orderby === 'title' && $order === 'asc') ? 'desc' : 'asc'), $current_url)); ?>" class="flex items-center hover:text-blue-600">
+                                            <?php _e('Title', 'simple-secure-file-share'); ?>
+                                            <?php if ($orderby === 'title'): ?>
+                                                <span class="ml-1"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap">
+                                        <a href="<?php echo esc_url(add_query_arg(array('orderby' => 'status', 'order' => ($orderby === 'status' && $order === 'asc') ? 'desc' : 'asc'), $current_url)); ?>" class="flex items-center hover:text-blue-600">
+                                            <?php _e('Status', 'simple-secure-file-share'); ?>
+                                            <?php if ($orderby === 'status'): ?>
+                                                <span class="ml-1"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 border-b"><?php _e('Share URL', 'simple-secure-file-share'); ?></th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center">
+                                        <a href="<?php echo esc_url(add_query_arg(array('orderby' => 'files', 'order' => ($orderby === 'files' && $order === 'desc') ? 'asc' : 'desc'), $current_url)); ?>" class="flex items-center justify-center hover:text-blue-600">
+                                            <?php _e('Files', 'simple-secure-file-share'); ?>
+                                            <?php if ($orderby === 'files'): ?>
+                                                <span class="ml-1"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap text-center">
+                                        <a href="<?php echo esc_url(add_query_arg(array('orderby' => 'downloads', 'order' => ($orderby === 'downloads' && $order === 'desc') ? 'asc' : 'desc'), $current_url)); ?>" class="flex items-center justify-center hover:text-blue-600">
+                                            <?php _e('DL Count', 'simple-secure-file-share'); ?>
+                                            <?php if ($orderby === 'downloads'): ?>
+                                                <span class="ml-1"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 border-b whitespace-nowrap">
+                                        <a href="<?php echo esc_url(add_query_arg(array('orderby' => 'date', 'order' => ($orderby === 'date' && $order === 'desc') ? 'asc' : 'desc'), $current_url)); ?>" class="flex items-center hover:text-blue-600">
+                                            <?php _e('Created', 'simple-secure-file-share'); ?>
+                                            <?php if ($orderby === 'date'): ?>
+                                                <span class="ml-1"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
                                     <th class="px-4 py-3 border-b whitespace-nowrap text-center"><?php _e('Actions', 'simple-secure-file-share'); ?></th>
                                 </tr>
                             </thead>
@@ -418,13 +726,22 @@ class Simple_File_Share {
                                         </span>
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap"><?php echo get_the_date('Y/m/d H:i', $share->ID); ?></td>
-                                    <td class="px-4 py-4 text-center">
-                                        <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('<?php echo esc_js(__('Are you sure you want to delete? Uploaded files will also be deleted.', 'simple-secure-file-share')); ?>');">
-                                            <input type="hidden" name="action" value="sfs_delete_share">
-                                            <input type="hidden" name="share_id" value="<?php echo $share->ID; ?>">
-                                            <?php wp_nonce_field('sfs_delete_nonce', 'sfs_nonce'); ?>
-                                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold whitespace-nowrap"><?php _e('Delete', 'simple-secure-file-share'); ?></button>
-                                        </form>
+                                    <td class="px-4 py-4">
+                                        <div class="flex items-center justify-center gap-3">
+                                            <button type="button" onclick="openEditModal(<?php echo $share->ID; ?>, '<?php echo esc_js($share->post_title); ?>')" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition" title="<?php esc_attr_e('Edit', 'simple-secure-file-share'); ?>">
+                                                <span class="dashicons dashicons-edit" style="font-size:14px;width:14px;height:14px;margin-right:4px;"></span>
+                                                <?php _e('Edit', 'simple-secure-file-share'); ?>
+                                            </button>
+                                            <form action="<?php echo admin_url('admin-post.php'); ?>" method="post" onsubmit="return confirm('<?php echo esc_js(__('Are you sure you want to delete? Uploaded files will also be deleted.', 'simple-secure-file-share')); ?>');" class="inline">
+                                                <input type="hidden" name="action" value="sfs_delete_share">
+                                                <input type="hidden" name="share_id" value="<?php echo $share->ID; ?>">
+                                                <?php wp_nonce_field('sfs_delete_nonce', 'sfs_nonce'); ?>
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition" title="<?php esc_attr_e('Delete', 'simple-secure-file-share'); ?>">
+                                                    <span class="dashicons dashicons-trash" style="font-size:14px;width:14px;height:14px;margin-right:4px;"></span>
+                                                    <?php _e('Delete', 'simple-secure-file-share'); ?>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -432,6 +749,61 @@ class Simple_File_Share {
                         </table>
                     </div>
                 <?php endif; ?>
+            </div>
+
+            <!-- 編集モーダル / Edit Modal -->
+            <div id="sfs-edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full">
+                    <!-- ヘッダー / Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-gray-900"><?php _e('Edit Share', 'simple-secure-file-share'); ?></h3>
+                        <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <!-- タイトル表示 / Title Display -->
+                    <div class="px-6 py-3 bg-gray-50 border-b border-gray-100">
+                        <div id="sfs-edit-title" class="text-sm text-gray-600 font-medium"></div>
+                    </div>
+                    
+                    <!-- フォーム / Form -->
+                    <form id="sfs-edit-form" action="<?php echo admin_url('admin-post.php'); ?>" method="post">
+                        <input type="hidden" name="action" value="sfs_update_password">
+                        <input type="hidden" name="share_id" id="sfs-edit-share-id" value="">
+                        <?php wp_nonce_field('sfs_update_password_nonce', 'sfs_nonce'); ?>
+                        
+                        <div class="px-6 py-6 space-y-6">
+                            <!-- パスワード設定 / Password Setting -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2"><?php _e('Password Setting', 'simple-secure-file-share'); ?></label>
+                                <select id="sfs-password-action" name="password_action" onchange="togglePasswordField()" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                    <option value="keep"><?php _e('Keep current setting', 'simple-secure-file-share'); ?></option>
+                                    <option value="set"><?php _e('Set/Change password', 'simple-secure-file-share'); ?></option>
+                                    <option value="remove"><?php _e('Remove password', 'simple-secure-file-share'); ?></option>
+                                </select>
+                            </div>
+                            
+                            <!-- 新しいパスワード / New Password -->
+                            <div id="sfs-new-password-container" class="hidden space-y-3">
+                                <label class="block text-sm font-semibold text-gray-700"><?php _e('New Password', 'simple-secure-file-share'); ?></label>
+                                <div class="flex gap-2">
+                                    <input type="text" name="new_password" id="sfs-new-password" autocomplete="off" class="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition font-mono" placeholder="<?php esc_attr_e('Enter new password', 'simple-secure-file-share'); ?>">
+                                    <button type="button" onclick="generateRandomPassword()" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg border border-gray-300 transition whitespace-nowrap" title="<?php esc_attr_e('Generate random password', 'simple-secure-file-share'); ?>">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500"><?php _e('Click the button to generate a random password', 'simple-secure-file-share'); ?></p>
+                            </div>
+                        </div>
+                        
+                        <!-- フッター / Footer -->
+                        <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+                            <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 rounded-lg border border-gray-300 transition"><?php _e('Cancel', 'simple-secure-file-share'); ?></button>
+                            <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition"><?php _e('Save Changes', 'simple-secure-file-share'); ?></button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <!-- 完了モーダル -->
@@ -464,6 +836,41 @@ class Simple_File_Share {
                 toast.classList.add('hiding');
                 toast.addEventListener('animationend', () => toast.remove());
             }, 3000);
+        }
+
+        // 編集モーダル関連
+        function openEditModal(shareId, title) {
+            document.getElementById('sfs-edit-share-id').value = shareId;
+            document.getElementById('sfs-edit-title').textContent = '<?php echo esc_js(__('Editing: ', 'simple-secure-file-share')); ?>' + title;
+            document.getElementById('sfs-password-action').value = 'keep';
+            document.getElementById('sfs-new-password').value = '';
+            document.getElementById('sfs-new-password-container').classList.add('hidden');
+            document.getElementById('sfs-edit-modal').classList.remove('hidden');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('sfs-edit-modal').classList.add('hidden');
+        }
+        
+        function togglePasswordField() {
+            const action = document.getElementById('sfs-password-action').value;
+            const container = document.getElementById('sfs-new-password-container');
+            if (action === 'set') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+        
+        // ランダムパスワード生成 / Generate random password
+        function generateRandomPassword() {
+            const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('sfs-new-password').value = password;
+            showAdminToast('<?php echo esc_js(__('Random password generated', 'simple-secure-file-share')); ?>');
         }
 
         // クリップボードコピー関数
@@ -593,23 +1000,48 @@ class Simple_File_Share {
             function updateFileList() {
                 fileList.innerHTML = '';
                 if (allFiles.length === 0) {
-                    fileListContainer.classList.add('hidden');
+                    fileListContainer.classList.add('sfs-hidden');
                     return;
                 }
-                fileListContainer.classList.remove('hidden');
+                fileListContainer.classList.remove('sfs-hidden');
 
                 allFiles.forEach((file, index) => {
                     const li = document.createElement('li');
                     li.className = 'flex items-center justify-between bg-white border border-gray-200 p-2 rounded text-sm shadow-sm';
-                    const size = (file.size / 1024).toFixed(1) + ' KB';
+                    const size = file.size < 1024 * 1024 
+                        ? (file.size / 1024).toFixed(1) + ' KB'
+                        : (file.size / 1024 / 1024).toFixed(1) + ' MB';
+                    
+                    // 画像ファイルかどうかチェック
+                    const isImage = file.type && file.type.startsWith('image/');
+                    let previewHtml = '';
+                    
+                    if (isImage) {
+                        // 画像プレビュー用のURLを生成（まだなければ作成）
+                        if (!file._previewUrl) {
+                            file._previewUrl = URL.createObjectURL(file);
+                        }
+                        previewHtml = `<img src="${file._previewUrl}" alt="" class="w-8 h-8 object-cover rounded flex-shrink-0">`;
+                    } else {
+                        // 非画像ファイルはアイコン表示
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        let iconColor = 'text-gray-400';
+                        if (['pdf'].includes(ext)) iconColor = 'text-red-500';
+                        if (['zip','rar','7z'].includes(ext)) iconColor = 'text-yellow-500';
+                        if (['doc','docx'].includes(ext)) iconColor = 'text-blue-500';
+                        if (['xls','xlsx'].includes(ext)) iconColor = 'text-green-500';
+                        previewHtml = `<span class="dashicons dashicons-media-default ${iconColor} flex-shrink-0" style="font-size:24px;width:24px;height:24px;"></span>`;
+                    }
                     
                     li.innerHTML = `
-                        <div class="flex items-center space-x-2 truncate">
-                            <span class="dashicons dashicons-media-default text-gray-400"></span>
-                            <span class="font-medium text-gray-700 truncate" title="${file.name}">${file.name}</span>
-                            <span class="text-xs text-gray-400">(${size})</span>
+                        <div class="flex items-center space-x-3 truncate min-w-0 flex-1">
+                            ${previewHtml}
+                            <div class="min-w-0 flex-1">
+                                <span class="font-medium text-gray-700 truncate block" title="${file.name}">${file.name}</span>
+                                <span class="text-xs text-gray-400">${size}</span>
+                            </div>
                         </div>
-                        <button type="button" class="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition" onclick="removeFile(${index})" title="削除">
+                        <button type="button" class="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition flex-shrink-0 ml-2" onclick="removeFile(${index})" title="削除">
                             <span class="dashicons dashicons-dismiss"></span>
                         </button>
                     `;
@@ -618,6 +1050,10 @@ class Simple_File_Share {
             }
 
             window.removeFile = function(index) {
+                // プレビューURLを解放
+                if (allFiles[index] && allFiles[index]._previewUrl) {
+                    URL.revokeObjectURL(allFiles[index]._previewUrl);
+                }
                 allFiles.splice(index, 1);
                 updateFileList();
             };
@@ -651,6 +1087,12 @@ class Simple_File_Share {
             });
 
             clearBtn.addEventListener('click', function() {
+                // すべてのプレビューURLを解放
+                allFiles.forEach(file => {
+                    if (file._previewUrl) {
+                        URL.revokeObjectURL(file._previewUrl);
+                    }
+                });
                 allFiles = [];
                 updateFileList();
             });
@@ -679,7 +1121,7 @@ class Simple_File_Share {
                 // UI Reset
                 submitBtn.disabled = true;
                 submitBtn.innerText = 'アップロード中...';
-                progressWrapper.classList.remove('hidden');
+                progressWrapper.classList.remove('sfs-hidden');
                 progressBar.style.width = '0%';
                 progressText.innerText = '0%';
 
@@ -718,12 +1160,17 @@ class Simple_File_Share {
                         try {
                             const response = JSON.parse(xhr.responseText);
                             if (response.success) {
-                                // 完了モーダル表示
+                                // 完了表示
                                 progressBar.style.width = '100%';
                                 progressText.innerText = '100%';
+                                
+                                // トースト通知を表示
+                                showAdminToast('アップロードが完了しました！');
+                                
+                                // 1.5秒後にページをリロード
                                 setTimeout(() => {
-                                    successModal.classList.remove('hidden');
-                                }, 300);
+                                    window.location.reload();
+                                }, 1500);
                             } else {
                                 alert('エラーが発生しました: ' + (response.data || '不明なエラー'));
                                 resetFormState();
@@ -751,7 +1198,7 @@ class Simple_File_Share {
             function resetFormState() {
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'アップロードして共有リンクを作成';
-                progressWrapper.classList.add('hidden');
+                progressWrapper.classList.add('sfs-hidden');
                 progressBar.style.width = '0%';
             }
         });
@@ -897,6 +1344,130 @@ class Simple_File_Share {
         wp_delete_post($share_id, true);
 
         wp_redirect(admin_url('admin.php?page=simple-file-share'));
+        exit;
+    }
+
+    /**
+     * POST処理: パスワード更新
+     */
+    public function handle_update_password_post() {
+        if (!current_user_can('manage_options')) wp_die(__('Permission denied', 'simple-secure-file-share'));
+        check_admin_referer('sfs_update_password_nonce', 'sfs_nonce');
+
+        $share_id = isset($_POST['share_id']) ? intval($_POST['share_id']) : 0;
+        $action = isset($_POST['password_action']) ? sanitize_text_field($_POST['password_action']) : 'keep';
+        $new_password = isset($_POST['new_password']) ? $_POST['new_password'] : '';
+
+        if (!$share_id) {
+            wp_redirect(admin_url('admin.php?page=simple-file-share'));
+            exit;
+        }
+
+        if ($action === 'remove') {
+            delete_post_meta($share_id, 'sfs_password_hash');
+        } elseif ($action === 'set' && !empty($new_password)) {
+            require_once ABSPATH . WPINC . '/class-phpass.php';
+            $hasher = new PasswordHash(8, true);
+            $hash = $hasher->HashPassword($new_password);
+            update_post_meta($share_id, 'sfs_password_hash', $hash);
+        }
+
+        wp_redirect(admin_url('admin.php?page=simple-file-share'));
+        exit;
+    }
+
+    /**
+     * 画像取得ハンドラ
+     * セキュリティ: リファラチェック + パスワード認証（Cookie/セッション）
+     */
+    public function handle_get_image() {
+        $token = isset($_GET['token']) ? sanitize_text_field($_GET['token']) : '';
+        $file_name = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
+
+        if (!$token || !$file_name) {
+            status_header(404);
+            exit;
+        }
+
+        // リファラチェック: 自サイトからのアクセスのみ許可
+        $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+        $site_url = home_url();
+        
+        // リファラがない場合、または自サイトのURLで始まっていない場合は拒否
+        // （SNS埋め込み、直リンク等を防止）
+        if (empty($referer) || strpos($referer, $site_url) !== 0) {
+            // 管理者がログインしている場合のみ許可（管理画面からの確認用）
+            if (!current_user_can('manage_options')) {
+                status_header(403);
+                echo '<!-- Direct access not allowed -->';
+                exit;
+            }
+        }
+
+        // 共有データを検索
+        $args = array(
+            'post_type' => 'sfs_share',
+            'meta_key' => 'sfs_token',
+            'meta_value' => $token,
+            'posts_per_page' => 1,
+            'post_status' => 'any'
+        );
+        $shares = get_posts($args);
+
+        if (empty($shares)) {
+            status_header(404);
+            exit;
+        }
+
+        $share = $shares[0];
+        $share_id = $share->ID;
+
+        // パスワード保護チェック（Cookie認証）
+        $password_hash = get_post_meta($share_id, 'sfs_password_hash', true);
+        if ($password_hash) {
+            $cookie_name = 'sfs_auth_' . $token;
+            $expected_value = md5($password_hash);
+            
+            if (!isset($_COOKIE[$cookie_name]) || $_COOKIE[$cookie_name] !== $expected_value) {
+                // 管理者は常にアクセス可能
+                if (!current_user_can('manage_options')) {
+                    status_header(403);
+                    echo '<!-- Authentication required -->';
+                    exit;
+                }
+            }
+        }
+
+        // ファイルパスの構築
+        $file_path = $this->upload_dir . $token . '/' . $file_name;
+
+        if (!file_exists($file_path)) {
+            status_header(404);
+            exit;
+        }
+
+        // MIMEタイプの取得
+        $mime_type = mime_content_type($file_path);
+        
+        // 画像のみ許可
+        if (strpos($mime_type, 'image/') !== 0) {
+            status_header(403);
+            exit;
+        }
+
+        // キャッシュ無効化（セキュリティ向上のため）
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Cache-Control: post-check=0, pre-check=0', false);
+        header('Pragma: no-cache');
+        
+        // コンテンツ出力
+        header('Content-Type: ' . $mime_type);
+        header('Content-Length: ' . filesize($file_path));
+        
+        // X-Content-Type-Options で MIME スニッフィングを防止
+        header('X-Content-Type-Options: nosniff');
+        
+        readfile($file_path);
         exit;
     }
 
@@ -1172,18 +1743,21 @@ class Simple_File_Share {
         ob_start();
         ?>
         <?php if (count($files) > 1): ?>
-        <a href="<?php echo esc_url(add_query_arg('download', 'zip', $download_base)); ?>" class="flex items-center space-x-2 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
+        <a href="<?php echo esc_url(add_query_arg('download', 'zip', $download_base)); ?>" class="flex items-center justify-center space-x-2 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             <span><?php _e('Download as ZIP', 'simple-secure-file-share'); ?></span>
         </a>
         <?php else: ?>
-        <a href="<?php echo esc_url(add_query_arg('download', $files[0]['system_name'], $download_base)); ?>" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
+        <a href="<?php echo esc_url(add_query_arg('download', $files[0]['system_name'], $download_base)); ?>" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             <span><?php _e('Download File', 'simple-secure-file-share'); ?></span>
         </a>
         <?php endif; ?>
         <?php
         $download_btn_html = ob_get_clean();
+
+        // 画像拡張子リスト
+        $image_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp');
 
         ?>
         <!DOCTYPE html>
@@ -1192,15 +1766,156 @@ class Simple_File_Share {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta name="robots" content="noindex, nofollow">
+            <meta name="color-scheme" content="light dark">
             <title><?php echo esc_html($title); ?> - <?php _e('File Share', 'simple-secure-file-share'); ?></title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
-                body { background-color: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; }
+                /* CSS Variables for theming */
+                :root {
+                    --sfs-bg: #f3f4f6;
+                    --sfs-bg-card: #ffffff;
+                    --sfs-bg-secondary: #f9fafb;
+                    --sfs-bg-tertiary: #f3f4f6;
+                    --sfs-border: #e5e7eb;
+                    --sfs-border-light: #f3f4f6;
+                    --sfs-text: #111827;
+                    --sfs-text-secondary: #374151;
+                    --sfs-text-muted: #6b7280;
+                    --sfs-text-light: #9ca3af;
+                    --sfs-shadow: rgba(0,0,0,0.1);
+                    --sfs-shadow-lg: rgba(0,0,0,0.15);
+                }
+                
+                @media (prefers-color-scheme: dark) {
+                    :root {
+                        --sfs-bg: #111827;
+                        --sfs-bg-card: #1f2937;
+                        --sfs-bg-secondary: #374151;
+                        --sfs-bg-tertiary: #1f2937;
+                        --sfs-border: #374151;
+                        --sfs-border-light: #4b5563;
+                        --sfs-text: #f9fafb;
+                        --sfs-text-secondary: #e5e7eb;
+                        --sfs-text-muted: #9ca3af;
+                        --sfs-text-light: #6b7280;
+                        --sfs-shadow: rgba(0,0,0,0.3);
+                        --sfs-shadow-lg: rgba(0,0,0,0.5);
+                    }
+                }
+                
+                body { 
+                    background-color: var(--sfs-bg); 
+                    font-family: 'Helvetica Neue', Arial, sans-serif; 
+                    color: var(--sfs-text);
+                    transition: background-color 0.3s, color 0.3s;
+                }
+                
+                /* View Toggle */
+                .sfs-view-toggle { display: flex; gap: 0.25rem; background: var(--sfs-border); padding: 0.25rem; border-radius: 0.5rem; }
+                .sfs-view-btn { padding: 0.5rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; color: var(--sfs-text-muted); background: transparent; border: none; }
+                .sfs-view-btn:hover { color: var(--sfs-text-secondary); }
+                .sfs-view-btn.active { background: var(--sfs-bg-card); color: #3b82f6; box-shadow: 0 1px 3px var(--sfs-shadow); }
+                
+                /* Grid View */
+                .sfs-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+                @media (min-width: 640px) { .sfs-file-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+                
+                .sfs-grid-item { 
+                    background: var(--sfs-bg-card); 
+                    border: 1px solid var(--sfs-border); 
+                    border-radius: 0.75rem; 
+                    overflow: hidden; 
+                    transition: all 0.2s; 
+                }
+                .sfs-grid-item:hover { box-shadow: 0 4px 12px var(--sfs-shadow); transform: translateY(-2px); }
+                .sfs-grid-preview { 
+                    width: 100%; 
+                    aspect-ratio: 1; 
+                    background: var(--sfs-bg-secondary); 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    overflow: hidden;
+                    cursor: pointer;
+                }
+                .sfs-grid-preview img { width: 100%; height: 100%; object-fit: cover; }
+                .sfs-grid-info { padding: 0.75rem; border-top: 1px solid var(--sfs-border-light); }
+                .sfs-grid-name { font-size: 0.875rem; font-weight: 500; color: var(--sfs-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .sfs-grid-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem; }
+                .sfs-grid-size { font-size: 0.75rem; color: var(--sfs-text-light); }
+                .sfs-grid-dl { font-size: 0.75rem; color: #3b82f6; font-weight: 500; }
+                .sfs-grid-dl:hover { color: #2563eb; text-decoration: underline; }
+                
+                /* List View */
+                .sfs-file-list { display: flex; flex-direction: column; gap: 0.75rem; }
+                .sfs-list-item { 
+                    background: var(--sfs-bg-card); 
+                    border: 1px solid var(--sfs-border); 
+                    border-radius: 0.75rem; 
+                    padding: 0.75rem; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: space-between; 
+                    transition: all 0.2s; 
+                }
+                .sfs-list-item:hover { box-shadow: 0 4px 12px var(--sfs-shadow); }
+                .sfs-list-preview { width: 48px; height: 48px; flex-shrink: 0; border-radius: 0.5rem; overflow: hidden; background: var(--sfs-bg-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+                .sfs-list-preview img { width: 100%; height: 100%; object-fit: cover; }
+                .sfs-list-name { font-weight: 500; color: var(--sfs-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .sfs-list-size { font-size: 0.75rem; color: var(--sfs-text-muted); }
+                
+                /* Footer */
+                .sfs-footer { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; background: var(--sfs-bg-card); }
+                @media (min-width: 768px) { .sfs-footer { flex-direction: row; justify-content: space-between; align-items: center; } }
+                .sfs-footer-text { font-size: 0.75rem; color: var(--sfs-text-muted); text-align: center; }
+                @media (min-width: 768px) { .sfs-footer-text { text-align: left; } }
+                
+                /* Icon color for dark mode */
+                .sfs-file-icon { color: var(--sfs-text-muted); }
+                
+
+                /* Lightbox */
+                .sfs-lightbox { 
+                    position: fixed; 
+                    top: 0; left: 0; 
+                    width: 100%; height: 100%; 
+                    background: rgba(0,0,0,0.9); 
+                    z-index: 9999; 
+                    display: none; 
+                    align-items: center; 
+                    justify-content: center; 
+                    padding: 1rem;
+                }
+                .sfs-lightbox.active { display: flex; }
+                .sfs-lightbox img { max-width: 100%; max-height: 90vh; border-radius: 0.5rem; }
+                .sfs-lightbox-close { 
+                    position: absolute; 
+                    top: 1rem; right: 1rem; 
+                    width: 40px; height: 40px; 
+                    background: white; 
+                    border-radius: 50%; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    cursor: pointer; 
+                    color: #374151; 
+                    font-size: 1.25rem; 
+                    font-weight: bold;
+                    line-height: 1;
+                    text-align: center;
+                    border: none;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }
+                .sfs-lightbox-close:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+                }
             </style>
         </head>
         <body class="flex items-center justify-center min-h-screen p-4">
 
-            <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden">
+            <div class="w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden" style="background: var(--sfs-bg-card);">
                 <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white">
                     <div class="flex items-center justify-between">
                         <div>
@@ -1217,48 +1932,160 @@ class Simple_File_Share {
                     </div>
                 </div>
 
-                <!-- 7ファイル以上の場合、上部にもダウンロードボタンを表示 -->
-                <?php if (count($files) >= 7): ?>
-                <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-end">
+                <!-- View Toggle & Download (Top) -->
+                <div class="p-4 flex justify-between items-center" style="background: var(--sfs-bg-tertiary); border-bottom: 1px solid var(--sfs-border);">
+                    <div class="sfs-view-toggle">
+                        <button type="button" class="sfs-view-btn active" data-view="list" title="<?php esc_attr_e('List View', 'simple-secure-file-share'); ?>">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                        </button>
+                        <button type="button" class="sfs-view-btn" data-view="grid" title="<?php esc_attr_e('Grid View', 'simple-secure-file-share'); ?>">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                        </button>
+                    </div>
+                    <?php if (count($files) >= 5): ?>
                     <?php echo $download_btn_html; ?>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
 
-                <div class="p-6 bg-gray-50 border-b border-gray-100">
-                    <ul class="space-y-3">
+                <div class="p-6" style="background: var(--sfs-bg-tertiary); border-bottom: 1px solid var(--sfs-border-light);">
+                    <!-- List View (default) -->
+                    <div id="sfs-list-view" class="sfs-file-list">
                         <?php foreach ($files as $file): 
                             $single_url = add_query_arg('download', $file['system_name'], $download_base);
                             $ext = strtolower(pathinfo($file['system_name'], PATHINFO_EXTENSION));
+                            $is_image = in_array($ext, $image_extensions);
                             $icon_color = 'text-gray-400';
-                            if(in_array($ext, ['jpg','png','gif'])) $icon_color = 'text-purple-500';
+                            if($is_image) $icon_color = 'text-purple-500';
                             if(in_array($ext, ['pdf'])) $icon_color = 'text-red-500';
-                            if(in_array($ext, ['zip'])) $icon_color = 'text-yellow-500';
+                            if(in_array($ext, ['zip','rar','7z'])) $icon_color = 'text-yellow-500';
                             if(in_array($ext, ['doc','docx'])) $icon_color = 'text-blue-500';
                             if(in_array($ext, ['xls','xlsx'])) $icon_color = 'text-green-500';
+                            
+                            // 画像の場合はプレビューURLを生成 (AJAX経由)
+                            $preview_url = '';
+                            if ($is_image) {
+                                $preview_url = admin_url('admin-ajax.php') . '?action=sfs_get_image&token=' . $token . '&file=' . $file['system_name'];
+                            }
                         ?>
-                        <li class="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between hover:shadow-md transition">
+                        <div class="sfs-list-item">
                             <div class="flex items-center space-x-3 overflow-hidden">
-                                <svg class="w-8 h-8 flex-shrink-0 <?php echo $icon_color; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <?php if ($is_image && $preview_url): ?>
+                                <div class="sfs-list-preview" onclick="openLightbox('<?php echo esc_url($preview_url); ?>')">
+                                    <img src="<?php echo esc_url($preview_url); ?>" alt="<?php echo esc_attr($file['original_name']); ?>">
+                                </div>
+                                <?php else: ?>
+                                <div class="sfs-list-preview">
+                                    <svg class="w-6 h-6 <?php echo $icon_color; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                </div>
+                                <?php endif; ?>
                                 <div class="min-w-0">
-                                    <p class="text-gray-800 font-medium truncate" title="<?php echo esc_attr($file['original_name']); ?>"><?php echo esc_html($file['original_name']); ?></p>
-                                    <p class="text-xs text-gray-500"><?php echo size_format($file['size']); ?></p>
+                                    <p class="sfs-list-name truncate" title="<?php echo esc_attr($file['original_name']); ?>"><?php echo esc_html($file['original_name']); ?></p>
+                                    <p class="sfs-list-size"><?php echo size_format($file['size']); ?></p>
                                 </div>
                             </div>
                             <a href="<?php echo esc_url($single_url); ?>" class="ml-4 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded text-sm font-medium transition whitespace-nowrap">
                                 DL
                             </a>
-                        </li>
+                        </div>
                         <?php endforeach; ?>
-                    </ul>
+                    </div>
+
+                    <!-- Grid View (hidden by default) -->
+                    <div id="sfs-grid-view" class="sfs-file-grid" style="display: none;">
+                        <?php foreach ($files as $file): 
+                            $single_url = add_query_arg('download', $file['system_name'], $download_base);
+                            $ext = strtolower(pathinfo($file['system_name'], PATHINFO_EXTENSION));
+                            $is_image = in_array($ext, $image_extensions);
+                            $icon_color = 'text-gray-400';
+                            if($is_image) $icon_color = 'text-purple-500';
+                            if(in_array($ext, ['pdf'])) $icon_color = 'text-red-500';
+                            if(in_array($ext, ['zip','rar','7z'])) $icon_color = 'text-yellow-500';
+                            if(in_array($ext, ['doc','docx'])) $icon_color = 'text-blue-500';
+                            if(in_array($ext, ['xls','xlsx'])) $icon_color = 'text-green-500';
+                            
+                            $preview_url = '';
+                            if ($is_image) {
+                                $preview_url = admin_url('admin-ajax.php') . '?action=sfs_get_image&token=' . $token . '&file=' . $file['system_name'];
+                            }
+                        ?>
+                        <div class="sfs-grid-item">
+                            <?php if ($is_image && $preview_url): ?>
+                            <div class="sfs-grid-preview" onclick="openLightbox('<?php echo esc_url($preview_url); ?>')">
+                                <img src="<?php echo esc_url($preview_url); ?>" alt="<?php echo esc_attr($file['original_name']); ?>">
+                            </div>
+                            <?php else: ?>
+                            <div class="sfs-grid-preview">
+                                <svg class="w-12 h-12 <?php echo $icon_color; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            </div>
+                            <?php endif; ?>
+                            <div class="sfs-grid-info">
+                                <p class="sfs-grid-name" title="<?php echo esc_attr($file['original_name']); ?>"><?php echo esc_html($file['original_name']); ?></p>
+                                <div class="sfs-grid-meta">
+                                    <span class="sfs-grid-size"><?php echo size_format($file['size']); ?></span>
+                                    <a href="<?php echo esc_url($single_url); ?>" class="sfs-grid-dl">DL</a>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
 
-                <div class="p-6 bg-white flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div class="text-xs text-gray-400 text-center md:text-left">
+                <div class="sfs-footer">
+                    <div class="sfs-footer-text">
                         <?php _e('If you have any questions, please feel free to contact us.', 'simple-secure-file-share'); ?>
                     </div>
                     <?php echo $download_btn_html; ?>
                 </div>
             </div>
+
+            <!-- Lightbox Modal -->
+            <div id="sfs-lightbox" class="sfs-lightbox" onclick="closeLightbox()">
+                <button class="sfs-lightbox-close" onclick="event.stopPropagation(); closeLightbox();">&times;</button>
+                <img id="sfs-lightbox-img" src="" alt="Preview" onclick="event.stopPropagation();">
+            </div>
+
+            <script>
+                // View Toggle
+                document.querySelectorAll('.sfs-view-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const view = this.dataset.view;
+                        document.querySelectorAll('.sfs-view-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        if (view === 'grid') {
+                            document.getElementById('sfs-list-view').style.display = 'none';
+                            document.getElementById('sfs-grid-view').style.display = 'grid';
+                        } else {
+                            document.getElementById('sfs-list-view').style.display = 'flex';
+                            document.getElementById('sfs-grid-view').style.display = 'none';
+                        }
+                        
+                        localStorage.setItem('sfs_frontend_view', view);
+                    });
+                });
+                
+                // Restore saved view preference
+                (function() {
+                    const saved = localStorage.getItem('sfs_frontend_view');
+                    if (saved === 'grid') {
+                        document.querySelector('.sfs-view-btn[data-view="grid"]').click();
+                    }
+                })();
+                
+                // Lightbox
+                function openLightbox(src) {
+                    document.getElementById('sfs-lightbox-img').src = src;
+                    document.getElementById('sfs-lightbox').classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+                function closeLightbox() {
+                    document.getElementById('sfs-lightbox').classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') closeLightbox();
+                });
+            </script>
 
         </body>
         </html>
@@ -1615,7 +2442,7 @@ class Simple_File_Share {
                 
                 <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <p class="text-blue-800">
-                        <strong><?php _e('Version:', 'simple-secure-file-share'); ?></strong> 3.1.1 | 
+                        <strong><?php _e('Version:', 'simple-secure-file-share'); ?></strong> 4.0.0 | 
                         <strong><?php _e('Author:', 'simple-secure-file-share'); ?></strong> AI Generator, Direction：Lichiphen（<a href="https://x.com/Lichiphen" target="_blank" class="text-blue-600 hover:underline">@Lichiphen</a>）
                     </p>
                 </div>
