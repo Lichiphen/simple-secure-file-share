@@ -1,5 +1,8 @@
 # Simple Secure File Share
 
+[![GitLab](https://img.shields.io/badge/GitLab-312152?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/lichiphen/simple-secure-file-share)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Lichiphen/simple-secure-file-share)
+
 [![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://gitlab.com/lichiphen/simple-secure-file-share)
 [![License](https://img.shields.io/badge/license-Proprietary-orange.svg)](./LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net)
