@@ -3,7 +3,7 @@
  * Plugin Name: Simple Secure File Share
  * Plugin URI: https://github.com/Lichiphen/simple-secure-file-share
  * Description: 外部共有用にファイルを安全にアップロードし、専用URLを発行するプラグイン。ファイルは直接アクセスから保護され、Zipダウンロードに対応しています。
- * Version: 4.0.0
+ * Version: 4.1.0
  * Author: AI Generator, Direction：Lichiphen（X@Lichiphen）
  * Author URI: https://lichiphen.com
  * License: Lichiphen Proprietary License v1.0
@@ -54,12 +54,25 @@ if (!defined('ABSPATH')) {
 
 class Simple_File_Share {
 
+    const VERSION = '4.1.0';
+
+    /** 共有パスワードの試行上限（IP+共有ごと / 15分） */
+    const MAX_AUTH_ATTEMPTS = 10;
+    const AUTH_LOCKOUT_SECONDS = 900;
+
+    /** 1共有あたりの最大ファイル数 */
+    const MAX_FILES_PER_SHARE = 100;
+
+    /** プレビュー配信を許可する画像MIME（SVGはスクリプトを含み得るため除外） */
+    const PREVIEW_MIME_TYPES = array('image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/avif');
+
     private $upload_dir;
+    private $legacy_upload_dir;
     private $share_slug = 'sfs-share';
 
     public function __construct() {
-        // アップロードディレクトリのパス定義 (プラグインフォルダ内)
-        $this->upload_dir = plugin_dir_path(__FILE__) . 'protected-uploads/';
+        // 旧バージョンの保存先（プラグインフォルダ内。プラグイン更新時に削除されるため移行対象）
+        $this->legacy_upload_dir = plugin_dir_path(__FILE__) . 'protected-uploads/';
 
         // フックの登録
         register_activation_hook(__FILE__, array($this, 'activate'));
@@ -97,6 +110,346 @@ class Simple_File_Share {
         // 画像取得用AJAXハンドラ（ログイン有無に関わらずアクセス可能だがトークン検証必須）
         add_action('wp_ajax_sfs_get_image', array($this, 'handle_get_image'));
         add_action('wp_ajax_nopriv_sfs_get_image', array($this, 'handle_get_image'));
+
+        // 保存先の保護ファイル確認と旧保存先からの移行
+        add_action('admin_init', array($this, 'maybe_prepare_storage'));
+    }
+
+    // =========================================================================
+    // セキュリティ関連ヘルパー
+    // =========================================================================
+
+    /**
+     * アップロード保存先 (wp-content/uploads/sfs-protected/)
+     * フィルター 'sfs_storage_dir' でWeb公開領域外のパスへ変更可能
+     */
+    private function get_upload_dir() {
+        if ($this->upload_dir === null) {
+            $uploads = wp_upload_dir(null, false);
+            $dir = trailingslashit($uploads['basedir']) . 'sfs-protected/';
+            $this->upload_dir = trailingslashit(apply_filters('sfs_storage_dir', $dir));
+        }
+        return $this->upload_dir;
+    }
+
+    /**
+     * 保存先ディレクトリを作成し、直接アクセス拒否ファイルを配置
+     */
+    private function ensure_storage_protection() {
+        $dir = $this->get_upload_dir();
+        if (!is_dir($dir)) {
+            wp_mkdir_p($dir);
+            @chmod($dir, 0750);
+        }
+
+        $htaccess = implode("\n", array(
+            '# Simple Secure File Share: deny all direct access',
+            '<IfModule mod_authz_core.c>',
+            '    Require all denied',
+            '</IfModule>',
+            '<IfModule !mod_authz_core.c>',
+            '    Order Deny,Allow',
+            '    Deny from all',
+            '</IfModule>',
+            'Options -Indexes -ExecCGI',
+            '<IfModule mod_php.c>',
+            '    php_flag engine off',
+            '</IfModule>',
+            '<IfModule mod_php7.c>',
+            '    php_flag engine off',
+            '</IfModule>',
+            'RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .cgi .pl .py',
+            '',
+        ));
+        $files = array(
+            '.htaccess' => $htaccess,
+            'index.php' => "<?php\n// Silence is golden.\n",
+            'web.config' => '<?xml version="1.0" encoding="UTF-8"?><configuration><system.webServer><authorization><deny users="*" /></authorization></system.webServer></configuration>',
+        );
+        foreach ($files as $name => $content) {
+            $path = $dir . $name;
+            if (!file_exists($path) || ($name === '.htaccess' && strpos((string) file_get_contents($path), 'Require all denied') === false)) {
+                @file_put_contents($path, $content);
+            }
+        }
+    }
+
+    /**
+     * 管理画面表示時: 保存先の保護と旧保存先からの移行
+     */
+    public function maybe_prepare_storage() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        $this->ensure_storage_protection();
+
+        $legacy = $this->legacy_upload_dir;
+        if (!is_dir($legacy) || untrailingslashit($legacy) === untrailingslashit($this->get_upload_dir())) {
+            return;
+        }
+
+        $dirs = glob($legacy . '*', GLOB_ONLYDIR) ?: array();
+        foreach ($dirs as $dir) {
+            $name = basename($dir);
+            $target = $this->get_upload_dir() . $name;
+            if ($this->is_valid_token($name) && !file_exists($target) && !is_link($dir)) {
+                @rename($dir, $target);
+            }
+        }
+
+        // 移行完了後、旧フォルダが空なら削除
+        $remaining = array_diff(scandir($legacy) ?: array(), array('.', '..', '.htaccess', 'index.php'));
+        if (empty($remaining)) {
+            @unlink($legacy . '.htaccess');
+            @unlink($legacy . 'index.php');
+            @rmdir($legacy);
+        }
+    }
+
+    /**
+     * 共有トークン形式 (32桁hex)
+     */
+    private function is_valid_token($token) {
+        return is_string($token) && (bool) preg_match('/^[a-f0-9]{32}$/', $token);
+    }
+
+    /**
+     * 共有フォルダ内のファイル実パスを安全に解決（パストラバーサル対策）
+     */
+    private function resolve_share_file($token, $system_name) {
+        if (!$this->is_valid_token($token) || !is_string($system_name) || $system_name === ''
+            || $system_name[0] === '.' || strpbrk($system_name, "/\\\0") !== false || basename($system_name) !== $system_name) {
+            return null;
+        }
+        $base = realpath($this->get_upload_dir() . $token);
+        $path = realpath($this->get_upload_dir() . $token . '/' . $system_name);
+        if ($base === false || $path === false || !is_file($path)) {
+            return null;
+        }
+        return strpos($path, trailingslashit($base)) === 0 ? $path : null;
+    }
+
+    /**
+     * sfs_share 投稿のみ取得（他の投稿IDを操作させない）
+     */
+    private function get_share($share_id) {
+        $post = get_post((int) $share_id);
+        return ($post && $post->post_type === 'sfs_share') ? $post : null;
+    }
+
+    /**
+     * トークンから公開中の共有を取得
+     */
+    private function get_share_by_token($token) {
+        if (!$this->is_valid_token($token)) {
+            return null;
+        }
+        $shares = get_posts(array(
+            'post_type' => 'sfs_share',
+            'meta_key' => 'sfs_token',
+            'meta_value' => $token,
+            'posts_per_page' => 1,
+            'post_status' => 'publish',
+        ));
+        return empty($shares) ? null : $shares[0];
+    }
+
+    /**
+     * 表示用ファイル名・タイトルから制御文字/双方向制御文字を除去
+     */
+    private function clean_text($text, $max_length = 200) {
+        $text = wp_check_invalid_utf8((string) $text, true);
+        $text = preg_replace('/[\p{Cc}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $text);
+        $text = trim((string) $text);
+        return function_exists('mb_substr') ? mb_substr($text, 0, $max_length) : substr($text, 0, $max_length);
+    }
+
+    private function clean_original_name($name) {
+        $name = preg_replace('#^.*[/\\\\]#', '', (string) $name);
+        $name = ltrim($this->clean_text($name, 200), '.');
+        return $name !== '' ? $name : 'file_' . gmdate('Ymd_His');
+    }
+
+    /**
+     * 共有パスワードのハッシュ化 (bcrypt / PASSWORD_DEFAULT)
+     */
+    private function hash_share_password($password) {
+        return password_hash(trim((string) $password), PASSWORD_DEFAULT);
+    }
+
+    /**
+     * 共有パスワードの検証。旧形式(phpass)のハッシュは成功時に再ハッシュする
+     */
+    private function verify_share_password($post_id, $password, $stored_hash) {
+        $password = (string) $password;
+        if (strlen($password) > 1024 || !is_string($stored_hash) || $stored_hash === '') {
+            return false;
+        }
+
+        if (strpos($stored_hash, '$P$') === 0 || strpos($stored_hash, '$H$') === 0) {
+            require_once ABSPATH . WPINC . '/class-phpass.php';
+            $hasher = new PasswordHash(8, true);
+            $candidates = array_unique(array(trim($password), $password));
+            foreach ($candidates as $candidate) {
+                if ($hasher->CheckPassword($candidate, $stored_hash)) {
+                    update_post_meta($post_id, 'sfs_password_hash', $this->hash_share_password($candidate));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (!password_verify(trim($password), $stored_hash)) {
+            return false;
+        }
+        if (password_needs_rehash($stored_hash, PASSWORD_DEFAULT)) {
+            update_post_meta($post_id, 'sfs_password_hash', $this->hash_share_password($password));
+        }
+        return true;
+    }
+
+    /**
+     * 有効期限付きHMAC署名 "expires.signature"
+     */
+    private function sign($purpose, $expires) {
+        return $expires . '.' . hash_hmac('sha256', $purpose . '|' . $expires, wp_salt('auth'));
+    }
+
+    private function verify_signature($purpose, $value) {
+        if (!is_string($value) || !preg_match('/^(\d{1,12})\.([a-f0-9]{64})$/', $value, $m)) {
+            return false;
+        }
+        if ((int) $m[1] < time()) {
+            return false;
+        }
+        return hash_equals(hash_hmac('sha256', $purpose . '|' . $m[1], wp_salt('auth')), $m[2]);
+    }
+
+    /**
+     * 認証Cookieの署名対象（パスワードハッシュを含め、変更時に失効させる）
+     */
+    private function auth_purpose($post_id, $token, $password_hash) {
+        return 'share-auth|' . (int) $post_id . '|' . $token . '|' . $password_hash;
+    }
+
+    private function is_share_authenticated($post_id, $token, $password_hash) {
+        $cookie = isset($_COOKIE['sfs_auth_' . $token]) ? wp_unslash($_COOKIE['sfs_auth_' . $token]) : null;
+        return $this->verify_signature($this->auth_purpose($post_id, $token, $password_hash), $cookie);
+    }
+
+    private function set_share_auth_cookie($post_id, $token, $password_hash) {
+        $expires = time() + HOUR_IN_SECONDS;
+        setcookie('sfs_auth_' . $token, $this->sign($this->auth_purpose($post_id, $token, $password_hash), $expires), array(
+            'expires'  => $expires,
+            'path'     => COOKIEPATH ? COOKIEPATH : '/',
+            'domain'   => COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
+            'secure'   => is_ssl(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ));
+    }
+
+    /**
+     * 直リンク防止用のダウンロード署名（10分単位で丸めて約1時間有効）
+     */
+    private function download_token($post_id, $token) {
+        $expires = (int) (ceil(time() / 600) * 600) + HOUR_IN_SECONDS;
+        return $this->sign('download|' . (int) $post_id . '|' . $token, $expires);
+    }
+
+    private function verify_download_token($post_id, $token, $value) {
+        return $this->verify_signature('download|' . (int) $post_id . '|' . $token, $value);
+    }
+
+    /**
+     * 総当たり対策（transientで失敗回数を記録）
+     */
+    private function rate_limit_keys($token) {
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+        return array(
+            'share' => 'sfs_rl_' . md5($ip . '|' . $token),
+            'ip'    => 'sfs_rl_' . md5($ip),
+        );
+    }
+
+    private function is_auth_locked($token) {
+        $keys = $this->rate_limit_keys($token);
+        return (int) get_transient($keys['share']) >= self::MAX_AUTH_ATTEMPTS
+            || (int) get_transient($keys['ip']) >= self::MAX_AUTH_ATTEMPTS * 5;
+    }
+
+    private function register_auth_failure($token) {
+        foreach ($this->rate_limit_keys($token) as $key) {
+            set_transient($key, (int) get_transient($key) + 1, self::AUTH_LOCKOUT_SECONDS);
+        }
+    }
+
+    private function clear_auth_failures($token) {
+        $keys = $this->rate_limit_keys($token);
+        delete_transient($keys['share']);
+    }
+
+    /**
+     * 共有ページ（独自HTML）用のセキュリティヘッダー
+     */
+    private function send_frontend_headers() {
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true); // ページキャッシュ系プラグインに保存させない
+        }
+        if (headers_sent()) {
+            return;
+        }
+        nocache_headers();
+        header('X-Robots-Tag: noindex, nofollow');
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: same-origin');
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'none'; object-src 'none'");
+    }
+
+    /**
+     * Content-Disposition ヘッダー値
+     */
+    private function content_disposition($filename, $type = 'attachment') {
+        $filename = $this->clean_text($filename, 200);
+        $fallback = str_replace(array('"', '\\', ';'), '', (string) preg_replace('/[^\x20-\x7e]/', '_', $filename));
+        if ($fallback === '') {
+            $fallback = 'download';
+        }
+        return $type . '; filename="' . $fallback . '"; filename*=UTF-8\'\'' . rawurlencode($filename);
+    }
+
+    /**
+     * ファイル送信（常にダウンロード扱い・ブラウザ内で実行させない）
+     */
+    private function send_file($path, $filename, $content_type = 'application/octet-stream', $disposition = 'attachment') {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        nocache_headers();
+        header('Content-Description: File Transfer');
+        header('Content-Type: ' . $content_type);
+        header('Content-Disposition: ' . $this->content_disposition($filename, $disposition));
+        header('Content-Length: ' . filesize($path));
+        header('X-Content-Type-Options: nosniff');
+        header("Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox");
+        header('X-Robots-Tag: noindex, nofollow');
+        header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0');
+        readfile($path);
+        exit;
+    }
+
+    /**
+     * ディレクトリを再帰的に削除（シンボリックリンクは辿らない）
+     */
+    private function delete_share_directory($token) {
+        if (!is_string($token) || $token === '' || strpbrk($token, "/\\\0.") !== false) {
+            return;
+        }
+        $dir = $this->get_upload_dir() . $token;
+        if (is_dir($dir) && !is_link($dir)) {
+            $this->delete_directory($dir);
+        }
     }
     
     /**
@@ -108,12 +461,20 @@ class Simple_File_Share {
             return;
         }
         
+        // Tailwind（ローカルビルド。外部CDNのスクリプトは管理画面で実行しない）
+        wp_enqueue_style(
+            'sfs-tailwind',
+            plugin_dir_url(__FILE__) . 'assets/css/tailwind.min.css',
+            array(),
+            self::VERSION
+        );
+
         // カスタムCSS
         wp_enqueue_style(
             'sfs-admin-style',
             plugin_dir_url(__FILE__) . 'assets/css/style.css',
-            array(),
-            '4.0.0'
+            array('sfs-tailwind'),
+            self::VERSION
         );
         
         // カスタムJS
@@ -121,7 +482,7 @@ class Simple_File_Share {
             'sfs-admin-script',
             plugin_dir_url(__FILE__) . 'assets/js/app.js',
             array(),
-            '4.0.0',
+            self::VERSION,
             true
         );
         
@@ -157,30 +518,31 @@ class Simple_File_Share {
      */
     public function handle_delete_single_file() {
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Permission denied.', 'simple-secure-file-share'));
+            wp_send_json_error(__('Permission denied.', 'simple-secure-file-share'), 403);
         }
         
         check_ajax_referer('sfs_ajax_nonce', 'nonce');
         
-        $share_id = intval($_POST['share_id']);
-        $file_name = sanitize_file_name($_POST['file_name']);
+        $share_id = isset($_POST['share_id']) ? absint($_POST['share_id']) : 0;
+        $file_name = isset($_POST['file_name']) ? (string) wp_unslash($_POST['file_name']) : '';
         
-        $token = get_post_meta($share_id, 'sfs_token', true);
-        $files = get_post_meta($share_id, 'sfs_files', true);
+        $share = $this->get_share($share_id);
+        $token = $share ? get_post_meta($share_id, 'sfs_token', true) : '';
+        $files = $share ? get_post_meta($share_id, 'sfs_files', true) : array();
         
-        if (!$token || !$files) {
+        if (!$token || !is_array($files) || empty($files)) {
             wp_send_json_error(__('Share not found.', 'simple-secure-file-share'));
         }
         
-        // ファイルを検索して削除
+        // 登録済みファイルと完全一致するもののみ削除
         $new_files = array();
         $file_deleted = false;
         
         foreach ($files as $file) {
-            if ($file['system_name'] === $file_name) {
-                $file_path = $this->upload_dir . $token . '/' . $file['system_name'];
-                if (file_exists($file_path)) {
-                    unlink($file_path);
+            if (!$file_deleted && isset($file['system_name']) && hash_equals((string) $file['system_name'], $file_name)) {
+                $file_path = $this->resolve_share_file($token, $file['system_name']);
+                if ($file_path) {
+                    @unlink($file_path);
                 }
                 $file_deleted = true;
             } else {
@@ -197,10 +559,7 @@ class Simple_File_Share {
         
         // ファイルが0になった場合は共有自体を削除
         if (empty($new_files)) {
-            $dir = $this->upload_dir . $token . '/';
-            if (is_dir($dir)) {
-                rmdir($dir);
-            }
+            $this->delete_share_directory($token);
             wp_delete_post($share_id, true);
             wp_send_json_success(array('deleted_share' => true));
         }
@@ -213,29 +572,24 @@ class Simple_File_Share {
      */
     public function handle_update_password() {
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Permission denied.', 'simple-secure-file-share'));
+            wp_send_json_error(__('Permission denied.', 'simple-secure-file-share'), 403);
         }
         
         check_ajax_referer('sfs_ajax_nonce', 'nonce');
         
-        $share_id = intval($_POST['share_id']);
-        $new_password = isset($_POST['password']) ? $_POST['password'] : '';
+        $share_id = isset($_POST['share_id']) ? absint($_POST['share_id']) : 0;
+        $new_password = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : '';
         $remove_password = isset($_POST['remove_password']) && $_POST['remove_password'] === 'true';
         
-        $token = get_post_meta($share_id, 'sfs_token', true);
-        
-        if (!$token) {
+        if (!$this->get_share($share_id) || !get_post_meta($share_id, 'sfs_token', true)) {
             wp_send_json_error(__('Share not found.', 'simple-secure-file-share'));
         }
         
         if ($remove_password) {
             delete_post_meta($share_id, 'sfs_password_hash');
             wp_send_json_success(array('message' => __('Password removed.', 'simple-secure-file-share')));
-        } else if (!empty($new_password)) {
-            require_once ABSPATH . WPINC . '/class-phpass.php';
-            $wp_hasher = new PasswordHash(8, true);
-            $hash = $wp_hasher->HashPassword(trim($new_password));
-            update_post_meta($share_id, 'sfs_password_hash', $hash);
+        } else if (trim($new_password) !== '' && strlen($new_password) <= 1024) {
+            update_post_meta($share_id, 'sfs_password_hash', $this->hash_share_password($new_password));
             wp_send_json_success(array('message' => __('Password updated.', 'simple-secure-file-share')));
         } else {
             wp_send_json_error(__('Password is required.', 'simple-secure-file-share'));
@@ -257,39 +611,10 @@ class Simple_File_Share {
      * プラグイン有効化時の処理
      */
     public function activate() {
-        if (!file_exists($this->upload_dir)) {
-            mkdir($this->upload_dir, 0755, true);
-        }
-
-        $htaccess_path = $this->upload_dir . '.htaccess';
-        if (!file_exists($htaccess_path)) {
-            $rules = "Order Deny,Allow\nDeny from all";
-            file_put_contents($htaccess_path, $rules);
-        }
-
-        $index_path = $this->upload_dir . 'index.php';
-        if (!file_exists($index_path)) {
-            file_put_contents($index_path, '<?php // Silence is golden.');
-        }
+        // アップロードディレクトリの作成と保護（.htaccess / index.php / web.config）
+        $this->ensure_storage_protection();
 
         $this->add_rewrite_rules();
-        // アップロードディレクトリの作成と保護
-        if (!file_exists($this->upload_dir)) {
-            wp_mkdir_p($this->upload_dir);
-        }
-
-        // .htaccessの作成（Apache用）: すべての直接アクセスを拒否
-        $htaccess_path = $this->upload_dir . '.htaccess';
-        if (!file_exists($htaccess_path)) {
-            $rules = "Order Deny,Allow\nDeny from all\n";
-            file_put_contents($htaccess_path, $rules);
-        }
-        
-        // index.php (ディレクトリリスティング防止)
-        if (!file_exists($this->upload_dir . 'index.php')) {
-            file_put_contents($this->upload_dir . 'index.php', '<?php // Silence is golden');
-        }
-
         flush_rewrite_rules();
     }
 
@@ -401,7 +726,6 @@ class Simple_File_Share {
 
         ?>
         <div class="wrap">
-            <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 .sfs-app h1, .sfs-app h2, .sfs-app h3 { margin-bottom: 0.5em; font-weight: bold; }
                 .sfs-app input[type=text], .sfs-app input[type=password] { border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px; color: #333; background: #fff; }
@@ -822,6 +1146,21 @@ class Simple_File_Share {
         </div>
 
         <script>
+        // HTMLエスケープ（属性値でも安全なよう引用符も変換）
+        function sfsEscapeHtml(text) {
+            return String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // 暗号学的に安全な乱数（偏りなし）
+        function sfsSecureRandomInt(max) {
+            const limit = Math.floor(0x100000000 / max) * max;
+            const buf = new Uint32Array(1);
+            do {
+                window.crypto.getRandomValues(buf);
+            } while (buf[0] >= limit);
+            return buf[0] % max;
+        }
+
         // 管理画面用トースト表示関数
         function showAdminToast(message) {
             const existingToast = document.querySelector('.sfs-toast');
@@ -829,7 +1168,8 @@ class Simple_File_Share {
 
             const toast = document.createElement('div');
             toast.className = 'sfs-toast';
-            toast.innerHTML = `<span class="dashicons dashicons-yes" style="color:#4ade80;"></span> ${message}`;
+            toast.innerHTML = '<span class="dashicons dashicons-yes" style="color:#4ade80;"></span> ';
+            toast.appendChild(document.createTextNode(String(message)));
             document.body.appendChild(toast);
 
             setTimeout(() => {
@@ -866,8 +1206,8 @@ class Simple_File_Share {
         function generateRandomPassword() {
             const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%';
             let password = '';
-            for (let i = 0; i < 12; i++) {
-                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            for (let i = 0; i < 16; i++) {
+                password += chars.charAt(sfsSecureRandomInt(chars.length));
             }
             document.getElementById('sfs-new-password').value = password;
             showAdminToast('<?php echo esc_js(__('Random password generated', 'simple-secure-file-share')); ?>');
@@ -945,7 +1285,7 @@ class Simple_File_Share {
             const togglePasswordBtn = document.getElementById('sfs-toggle-password');
             const generatePasswordBtn = document.getElementById('sfs-generate-password');
 
-            const ajaxUrl = "<?php echo admin_url('admin-ajax.php'); ?>";
+            const ajaxUrl = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
             let allFiles = [];
 
             // --- パスワード関連ロジック ---
@@ -969,18 +1309,23 @@ class Simple_File_Share {
 
             // 2. 自動生成 & コピー
             generatePasswordBtn.addEventListener('click', function() {
-                const length = 12;
+                const length = 16;
                 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
                 let retVal = "";
                 const types = ["abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789", "!@#$%^&*()_+"];
                 
                 types.forEach(t => {
-                    retVal += t.charAt(Math.floor(Math.random() * t.length));
+                    retVal += t.charAt(sfsSecureRandomInt(t.length));
                 });
                 for (let i = 0, n = charset.length; i < length - types.length; ++i) {
-                    retVal += charset.charAt(Math.floor(Math.random() * n));
+                    retVal += charset.charAt(sfsSecureRandomInt(n));
                 }
-                retVal = retVal.split('').sort(function(){return 0.5-Math.random()}).join('');
+                retVal = retVal.split('');
+                for (let i = retVal.length - 1; i > 0; i--) {
+                    const j = sfsSecureRandomInt(i + 1);
+                    [retVal[i], retVal[j]] = [retVal[j], retVal[i]];
+                }
+                retVal = retVal.join('');
 
                 // 入力欄にセット (生成時は一時的にマスクを外して表示)
                 passwordInput.classList.remove('sfs-masked');
@@ -1021,7 +1366,7 @@ class Simple_File_Share {
                         if (!file._previewUrl) {
                             file._previewUrl = URL.createObjectURL(file);
                         }
-                        previewHtml = `<img src="${file._previewUrl}" alt="" class="w-8 h-8 object-cover rounded flex-shrink-0">`;
+                        previewHtml = `<img src="${sfsEscapeHtml(file._previewUrl)}" alt="" class="w-8 h-8 object-cover rounded flex-shrink-0">`;
                     } else {
                         // 非画像ファイルはアイコン表示
                         const ext = file.name.split('.').pop().toLowerCase();
@@ -1037,7 +1382,7 @@ class Simple_File_Share {
                         <div class="flex items-center space-x-3 truncate min-w-0 flex-1">
                             ${previewHtml}
                             <div class="min-w-0 flex-1">
-                                <span class="font-medium text-gray-700 truncate block" title="${file.name}">${file.name}</span>
+                                <span class="font-medium text-gray-700 truncate block" title="${sfsEscapeHtml(file.name)}">${sfsEscapeHtml(file.name)}</span>
                                 <span class="text-xs text-gray-400">${size}</span>
                             </div>
                         </div>
@@ -1245,54 +1590,63 @@ class Simple_File_Share {
      * 共通アップロードロジック
      */
     private function process_upload_logic($post_data, $files_data) {
-        $title = sanitize_text_field($post_data['share_title']);
-        $files = $files_data['files'];
+        $post_data = wp_unslash($post_data);
+        $title = $this->clean_text(sanitize_text_field(isset($post_data['share_title']) ? (string) $post_data['share_title'] : ''), 200);
+        $files = isset($files_data['files']) ? $files_data['files'] : array();
         // パスワード取得
-        $password = isset($post_data['share_password']) ? $post_data['share_password'] : '';
+        $password = isset($post_data['share_password']) ? (string) $post_data['share_password'] : '';
 
-        if (empty($title) || empty($files['name'][0])) {
-            return new WP_Error('missing_data', 'タイトルとファイルは必須です。');
+        if ($title === '' || !is_array($files) || !isset($files['name']) || !is_array($files['name']) || empty($files['name'][0])) {
+            return new WP_Error('missing_data', __('Title and files are required.', 'simple-secure-file-share'));
         }
+
+        $count = count($files['name']);
+        if ($count > self::MAX_FILES_PER_SHARE) {
+            return new WP_Error('too_many_files', sprintf(__('You can upload up to %d files at once.', 'simple-secure-file-share'), self::MAX_FILES_PER_SHARE));
+        }
+        if (strlen($password) > 1024) {
+            return new WP_Error('invalid_password', __('Password is too long.', 'simple-secure-file-share'));
+        }
+
+        $this->ensure_storage_protection();
 
         // トークン生成
         $token = bin2hex(random_bytes(16));
-        $target_dir = $this->upload_dir . $token . '/';
+        $target_dir = $this->get_upload_dir() . $token . '/';
         
-        if (!mkdir($target_dir, 0755, true)) {
-            return new WP_Error('dir_error', 'ディレクトリ作成に失敗しました。');
+        if (!@mkdir($target_dir, 0750, true)) {
+            return new WP_Error('dir_error', __('Failed to create directory.', 'simple-secure-file-share'));
         }
+        @file_put_contents($target_dir . 'index.php', "<?php\n// Silence is golden.\n");
 
         $saved_files = array();
-        $count = count($files['name']);
+        $max_size = wp_max_upload_size();
         
         for ($i = 0; $i < $count; $i++) {
-            if ($files['error'][$i] === UPLOAD_ERR_OK) {
-                $filename = sanitize_file_name($files['name'][$i]);
-                $original_name = $files['name'][$i];
-                $destination = $target_dir . $filename;
-                
-                // 重複回避
-                $counter = 1;
-                $path_info = pathinfo($destination);
-                while(file_exists($destination)) {
-                    $filename = $path_info['filename'] . '_' . $counter . '.' . $path_info['extension'];
-                    $destination = $target_dir . $filename;
-                    $counter++;
-                }
+            $error = isset($files['error'][$i]) ? (int) $files['error'][$i] : UPLOAD_ERR_NO_FILE;
+            $tmp_name = isset($files['tmp_name'][$i]) ? (string) $files['tmp_name'][$i] : '';
+            if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp_name) || filesize($tmp_name) > $max_size) {
+                continue;
+            }
 
-                if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
-                    $saved_files[] = array(
-                        'system_name' => $filename,
-                        'original_name' => $original_name, // 表示用
-                        'size' => $files['size'][$i]
-                    );
-                }
+            $original_name = $this->clean_original_name(isset($files['name'][$i]) ? $files['name'][$i] : '');
+            // ディスク上の名前はランダム値 + 固定拡張子（.php / .phtml / .htaccess 等を保存させない）
+            $filename = bin2hex(random_bytes(16)) . '.dat';
+            $destination = $target_dir . $filename;
+
+            if (move_uploaded_file($tmp_name, $destination)) {
+                @chmod($destination, 0640);
+                $saved_files[] = array(
+                    'system_name' => $filename,
+                    'original_name' => $original_name, // 表示用
+                    'size' => (int) filesize($destination)
+                );
             }
         }
 
         if (empty($saved_files)) {
-            rmdir($target_dir);
-            return new WP_Error('upload_failed', 'ファイルの保存に失敗しました。');
+            $this->delete_share_directory($token);
+            return new WP_Error('upload_failed', __('Failed to save files.', 'simple-secure-file-share'));
         }
 
         // 投稿作成
@@ -1300,9 +1654,10 @@ class Simple_File_Share {
             'post_title' => $title,
             'post_type'  => 'sfs_share',
             'post_status' => 'publish'
-        ));
+        ), true);
 
         if (is_wp_error($post_id)) {
+            $this->delete_share_directory($token);
             return $post_id;
         }
 
@@ -1310,11 +1665,8 @@ class Simple_File_Share {
         update_post_meta($post_id, 'sfs_files', $saved_files);
         
         // パスワード保存
-        if (!empty($password)) {
-            require_once ABSPATH . WPINC . '/class-phpass.php';
-            $wp_hasher = new PasswordHash(8, true);
-            $hash = $wp_hasher->HashPassword(trim($password));
-            update_post_meta($post_id, 'sfs_password_hash', $hash);
+        if (trim($password) !== '') {
+            update_post_meta($post_id, 'sfs_password_hash', $this->hash_share_password($password));
         }
 
         return true;
@@ -1324,26 +1676,21 @@ class Simple_File_Share {
      * POST処理: 削除
      */
     public function handle_delete_share() {
-        if (!current_user_can('manage_options')) wp_die('権限がありません。');
+        if (!current_user_can('manage_options')) wp_die(__('Permission denied.', 'simple-secure-file-share'), '', array('response' => 403));
         check_admin_referer('sfs_delete_nonce', 'sfs_nonce');
 
-        $share_id = intval($_POST['share_id']);
-        $token = get_post_meta($share_id, 'sfs_token', true);
+        $share_id = isset($_POST['share_id']) ? absint($_POST['share_id']) : 0;
 
-        if ($token) {
-            $dir = $this->upload_dir . $token . '/';
-            if (is_dir($dir)) {
-                $files = glob($dir . '*', GLOB_MARK);
-                foreach ($files as $file) {
-                    unlink($file);
-                }
-                rmdir($dir);
+        // sfs_share 以外の投稿は削除しない
+        if ($this->get_share($share_id)) {
+            $token = get_post_meta($share_id, 'sfs_token', true);
+            if ($token) {
+                $this->delete_share_directory($token);
             }
+            wp_delete_post($share_id, true);
         }
 
-        wp_delete_post($share_id, true);
-
-        wp_redirect(admin_url('admin.php?page=simple-file-share'));
+        wp_safe_redirect(admin_url('admin.php?page=simple-file-share'));
         exit;
     }
 
@@ -1351,124 +1698,86 @@ class Simple_File_Share {
      * POST処理: パスワード更新
      */
     public function handle_update_password_post() {
-        if (!current_user_can('manage_options')) wp_die(__('Permission denied', 'simple-secure-file-share'));
+        if (!current_user_can('manage_options')) wp_die(__('Permission denied', 'simple-secure-file-share'), '', array('response' => 403));
         check_admin_referer('sfs_update_password_nonce', 'sfs_nonce');
 
-        $share_id = isset($_POST['share_id']) ? intval($_POST['share_id']) : 0;
-        $action = isset($_POST['password_action']) ? sanitize_text_field($_POST['password_action']) : 'keep';
-        $new_password = isset($_POST['new_password']) ? $_POST['new_password'] : '';
+        $share_id = isset($_POST['share_id']) ? absint($_POST['share_id']) : 0;
+        $action = isset($_POST['password_action']) ? sanitize_key($_POST['password_action']) : 'keep';
+        $new_password = isset($_POST['new_password']) ? (string) wp_unslash($_POST['new_password']) : '';
 
-        if (!$share_id) {
-            wp_redirect(admin_url('admin.php?page=simple-file-share'));
+        if (!$share_id || !$this->get_share($share_id)) {
+            wp_safe_redirect(admin_url('admin.php?page=simple-file-share'));
             exit;
         }
 
         if ($action === 'remove') {
             delete_post_meta($share_id, 'sfs_password_hash');
-        } elseif ($action === 'set' && !empty($new_password)) {
-            require_once ABSPATH . WPINC . '/class-phpass.php';
-            $hasher = new PasswordHash(8, true);
-            $hash = $hasher->HashPassword($new_password);
-            update_post_meta($share_id, 'sfs_password_hash', $hash);
+        } elseif ($action === 'set' && trim($new_password) !== '' && strlen($new_password) <= 1024) {
+            update_post_meta($share_id, 'sfs_password_hash', $this->hash_share_password($new_password));
         }
 
-        wp_redirect(admin_url('admin.php?page=simple-file-share'));
+        wp_safe_redirect(admin_url('admin.php?page=simple-file-share'));
         exit;
     }
 
     /**
      * 画像取得ハンドラ
-     * セキュリティ: リファラチェック + パスワード認証（Cookie/セッション）
+     * セキュリティ: パスワード認証（署名付きCookie）+ 登録済みファイルのみ + 安全な画像形式のみ
      */
     public function handle_get_image() {
-        $token = isset($_GET['token']) ? sanitize_text_field($_GET['token']) : '';
-        $file_name = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
+        $token = isset($_GET['token']) ? (string) wp_unslash($_GET['token']) : '';
+        $file_name = isset($_GET['file']) ? (string) wp_unslash($_GET['file']) : '';
+        $is_admin = current_user_can('manage_options');
 
-        if (!$token || !$file_name) {
+        if (!$this->is_valid_token($token) || $file_name === '') {
             status_header(404);
             exit;
         }
 
-        // リファラチェック: 自サイトからのアクセスのみ許可
-        $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
-        $site_url = home_url();
-        
-        // リファラがない場合、または自サイトのURLで始まっていない場合は拒否
-        // （SNS埋め込み、直リンク等を防止）
-        if (empty($referer) || strpos($referer, $site_url) !== 0) {
-            // 管理者がログインしている場合のみ許可（管理画面からの確認用）
-            if (!current_user_can('manage_options')) {
-                status_header(403);
-                echo '<!-- Direct access not allowed -->';
-                exit;
-            }
-        }
-
-        // 共有データを検索
-        $args = array(
-            'post_type' => 'sfs_share',
-            'meta_key' => 'sfs_token',
-            'meta_value' => $token,
-            'posts_per_page' => 1,
-            'post_status' => 'any'
-        );
-        $shares = get_posts($args);
-
-        if (empty($shares)) {
-            status_header(404);
-            exit;
-        }
-
-        $share = $shares[0];
-        $share_id = $share->ID;
-
-        // パスワード保護チェック（Cookie認証）
-        $password_hash = get_post_meta($share_id, 'sfs_password_hash', true);
-        if ($password_hash) {
-            $cookie_name = 'sfs_auth_' . $token;
-            $expected_value = md5($password_hash);
-            
-            if (!isset($_COOKIE[$cookie_name]) || $_COOKIE[$cookie_name] !== $expected_value) {
-                // 管理者は常にアクセス可能
-                if (!current_user_can('manage_options')) {
-                    status_header(403);
-                    echo '<!-- Authentication required -->';
-                    exit;
-                }
-            }
-        }
-
-        // ファイルパスの構築
-        $file_path = $this->upload_dir . $token . '/' . $file_name;
-
-        if (!file_exists($file_path)) {
-            status_header(404);
-            exit;
-        }
-
-        // MIMEタイプの取得
-        $mime_type = mime_content_type($file_path);
-        
-        // 画像のみ許可
-        if (strpos($mime_type, 'image/') !== 0) {
+        // リファラチェック: 自サイトからのアクセスのみ許可（SNS埋め込み・直リンク抑止。認証の代わりではない）
+        $referer = isset($_SERVER['HTTP_REFERER']) ? (string) $_SERVER['HTTP_REFERER'] : '';
+        if (!$is_admin && ($referer === '' || strpos($referer, trailingslashit(home_url())) !== 0)) {
             status_header(403);
             exit;
         }
 
-        // キャッシュ無効化（セキュリティ向上のため）
-        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-        header('Cache-Control: post-check=0, pre-check=0', false);
-        header('Pragma: no-cache');
-        
-        // コンテンツ出力
-        header('Content-Type: ' . $mime_type);
-        header('Content-Length: ' . filesize($file_path));
-        
-        // X-Content-Type-Options で MIME スニッフィングを防止
-        header('X-Content-Type-Options: nosniff');
-        
-        readfile($file_path);
-        exit;
+        $share = $this->get_share_by_token($token);
+        if (!$share) {
+            status_header(404);
+            exit;
+        }
+        $share_id = $share->ID;
+
+        // パスワード保護チェック（共有ページと同じ署名付きCookie）
+        $password_hash = get_post_meta($share_id, 'sfs_password_hash', true);
+        if ($password_hash && !$is_admin && !$this->is_share_authenticated($share_id, $token, $password_hash)) {
+            status_header(403);
+            exit;
+        }
+
+        // 共有に登録されたファイルのみ
+        $files = get_post_meta($share_id, 'sfs_files', true);
+        $original_name = null;
+        foreach ((is_array($files) ? $files : array()) as $f) {
+            if (isset($f['system_name']) && hash_equals((string) $f['system_name'], $file_name)) {
+                $original_name = (string) $f['original_name'];
+                break;
+            }
+        }
+        $file_path = $original_name !== null ? $this->resolve_share_file($token, $file_name) : null;
+        if (!$file_path) {
+            status_header(404);
+            exit;
+        }
+
+        // 中身からMIMEを判定し、スクリプトを含み得ない画像形式のみ配信（SVG等は拒否）
+        $mime_type = function_exists('finfo_open') ? (string) finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file_path) : (string) mime_content_type($file_path);
+        if (!in_array($mime_type, self::PREVIEW_MIME_TYPES, true)) {
+            status_header(403);
+            exit;
+        }
+
+        $this->send_file($file_path, $original_name, $mime_type, 'inline');
     }
 
     /**
@@ -1478,25 +1787,21 @@ class Simple_File_Share {
         $token = get_query_var('sfs_token');
         if (!$token) return;
 
-        $args = array(
-            'post_type' => 'sfs_share',
-            'meta_key' => 'sfs_token',
-            'meta_value' => $token,
-            'posts_per_page' => 1
-        );
-        $query = new WP_Query($args);
+        $share = $this->get_share_by_token($token);
 
-        if (!$query->have_posts()) {
+        if (!$share) {
             global $wp_query;
             $wp_query->set_404();
             status_header(404);
             return;
         }
 
-        $query->the_post();
-        $post_id = get_the_ID();
+        $this->send_frontend_headers();
+
+        $post_id = $share->ID;
         $files = get_post_meta($post_id, 'sfs_files', true);
-        $title = get_the_title();
+        $files = is_array($files) ? $files : array();
+        $title = get_the_title($post_id);
         
         // パスワードチェック処理
         $password_hash = get_post_meta($post_id, 'sfs_password_hash', true);
@@ -1506,21 +1811,13 @@ class Simple_File_Share {
 
         // ダウンロード処理
         if (isset($_GET['download'])) {
-            // 直リンク防止: ダウンロードトークンのチェック
-            $dl_token = isset($_GET['dl_token']) ? sanitize_text_field($_GET['dl_token']) : '';
-            $expected_token = wp_hash($post_id . $token . date('Y-m-d'));
-            
-            // リファラーチェック（共有ページからのアクセスかどうか）
-            $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
-            $share_url = home_url('/' . $this->share_slug . '/' . $token);
-            $is_valid_referer = (strpos($referer, $share_url) === 0);
-            
-            // トークンが正しくない、かつリファラーも不正な場合はエラー
-            if ($dl_token !== $expected_token && !$is_valid_referer) {
+            // 直リンク防止: 共有ページで発行した署名付きトークンのみ許可
+            $dl_token = isset($_GET['dl_token']) ? (string) wp_unslash($_GET['dl_token']) : '';
+            if (!$this->verify_download_token($post_id, $token, $dl_token)) {
                 wp_die(__('Invalid access. Please download from the share page.', 'simple-secure-file-share'), __('Access Denied', 'simple-secure-file-share'), array('response' => 403));
             }
             
-            $target = sanitize_file_name($_GET['download']);
+            $target = (string) wp_unslash($_GET['download']);
             if ($target === 'zip') {
                 // ダウンロードカウントを増加
                 $current_count = (int)get_post_meta($post_id, 'sfs_download_count', true);
@@ -1528,41 +1825,25 @@ class Simple_File_Share {
                 
                 $this->download_as_zip($token, $files, $title);
             } else {
-                // 個別ダウンロード
-                $valid_file = false;
-                $original_name = '';
+                // 個別ダウンロード（共有に登録済みのファイルのみ）
                 foreach ($files as $f) {
-                    if ($f['system_name'] === $target) {
-                        $valid_file = true;
-                        $original_name = $f['original_name'];
+                    if (isset($f['system_name']) && hash_equals((string) $f['system_name'], $target)) {
+                        $file_path = $this->resolve_share_file($token, $f['system_name']);
+                        if ($file_path) {
+                            // ダウンロードカウントを増加
+                            $current_count = (int)get_post_meta($post_id, 'sfs_download_count', true);
+                            update_post_meta($post_id, 'sfs_download_count', $current_count + 1);
+
+                            $this->send_file($file_path, (string) $f['original_name']);
+                        }
                         break;
                     }
                 }
-
-                if ($valid_file) {
-                    $file_path = $this->upload_dir . $token . '/' . $target;
-                    if (file_exists($file_path)) {
-                        // ダウンロードカウントを増加
-                        $current_count = (int)get_post_meta($post_id, 'sfs_download_count', true);
-                        update_post_meta($post_id, 'sfs_download_count', $current_count + 1);
-                        
-                        header('Content-Description: File Transfer');
-                        header('Content-Type: application/octet-stream');
-                        $encoded_filename = rawurlencode($original_name);
-                        header("Content-Disposition: attachment; filename=\"{$encoded_filename}\"; filename*=UTF-8''{$encoded_filename}");
-                        header('Content-Transfer-Encoding: binary');
-                        header('Expires: 0');
-                        header('Cache-Control: must-revalidate');
-                        header('Pragma: public');
-                        header('Content-Length: ' . filesize($file_path));
-                        readfile($file_path);
-                        exit;
-                    }
-                }
+                wp_die(__('File not found.', 'simple-secure-file-share'), '', array('response' => 404));
             }
         }
 
-        $this->render_frontend_html($title, $files, $token);
+        $this->render_frontend_html($title, $files, $token, $post_id);
         exit;
     }
 
@@ -1570,29 +1851,34 @@ class Simple_File_Share {
      * パスワード認証ロジック
      */
     private function check_password_auth($post_id, $token, $stored_hash, $title) {
-        $cookie_name = 'sfs_auth_' . $token;
-        $auth_token = wp_hash($post_id . $token . 'sfs_secret'); // 簡易的な認証トークン
-
         // 1. POST送信時のチェック
         if (isset($_POST['sfs_password'])) {
-            require_once ABSPATH . WPINC . '/class-phpass.php';
-            $wp_hasher = new PasswordHash(8, true);
-            
-            if ($wp_hasher->CheckPassword(trim($_POST['sfs_password']), $stored_hash)) {
-                // 認証成功: Cookieセット (1時間有効)
-                setcookie($cookie_name, $auth_token, time() + 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
-                // リロードしてPOSTデータをクリア
-                wp_redirect(remove_query_arg('sfs_password_error'));
-                exit;
-            } else {
-                // 認証失敗
-                $this->render_password_form($title, true);
+            if ($this->is_auth_locked($token)) {
+                status_header(429);
+                $this->render_password_form($title, 'locked');
                 exit;
             }
+
+            $password = (string) wp_unslash($_POST['sfs_password']);
+            if ($this->verify_share_password($post_id, $password, $stored_hash)) {
+                $this->clear_auth_failures($token);
+                // 再ハッシュされた可能性があるため最新のハッシュで署名
+                $current_hash = get_post_meta($post_id, 'sfs_password_hash', true);
+                $this->set_share_auth_cookie($post_id, $token, $current_hash);
+                // リロードしてPOSTデータをクリア
+                wp_safe_redirect(home_url('/' . $this->share_slug . '/' . $token), 303);
+                exit;
+            }
+
+            // 認証失敗
+            $this->register_auth_failure($token);
+            status_header($this->is_auth_locked($token) ? 429 : 401);
+            $this->render_password_form($title, $this->is_auth_locked($token) ? 'locked' : true);
+            exit;
         }
 
         // 2. Cookieチェック
-        if (isset($_COOKIE[$cookie_name]) && $_COOKIE[$cookie_name] === $auth_token) {
+        if ($this->is_share_authenticated($post_id, $token, $stored_hash)) {
             return; // 認証OK
         }
 
@@ -1613,7 +1899,7 @@ class Simple_File_Share {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta name="robots" content="noindex, nofollow">
             <title><?php _e('Password Authentication', 'simple-secure-file-share'); ?> - <?php echo esc_html($title); ?></title>
-            <script src="https://cdn.tailwindcss.com"></script>
+            <link rel="stylesheet" href="<?php echo esc_url(plugins_url('assets/css/tailwind.min.css', __FILE__) . '?ver=' . self::VERSION); ?>">
             <style>
                 body { background-color: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; }
                 /* パスワードマスク用CSS (text-security) */
@@ -1639,7 +1925,13 @@ class Simple_File_Share {
 
                     <?php if($is_error): ?>
                         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
-                            <span class="block sm:inline"><?php _e('Incorrect password.', 'simple-secure-file-share'); ?></span>
+                            <span class="block sm:inline"><?php
+                                if ($is_error === 'locked') {
+                                    _e('Too many failed attempts. Please wait 15 minutes and try again.', 'simple-secure-file-share');
+                                } else {
+                                    _e('Incorrect password.', 'simple-secure-file-share');
+                                }
+                            ?></span>
                         </div>
                     <?php endif; ?>
 
@@ -1648,7 +1940,7 @@ class Simple_File_Share {
                             <label for="sfs-frontend-password" class="sr-only"><?php _e('Password', 'simple-secure-file-share'); ?></label>
                             <!-- type="text" で実装し、CSS(.sfs-masked)で隠す -->
                             <!-- autocomplete="off" を指定し、ブラウザの介入を最小限に -->
-                            <input type="text" name="sfs_password" id="sfs-frontend-password" required 
+                            <input type="text" name="sfs_password" id="sfs-frontend-password" required maxlength="1024" 
                                 class="sfs-masked appearance-none rounded-lg relative block w-full px-4 py-3 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
                                 placeholder="<?php esc_attr_e('Enter password', 'simple-secure-file-share'); ?>"
                                 autocomplete="off"
@@ -1699,41 +1991,57 @@ class Simple_File_Share {
      * Zipダウンロード処理
      */
     private function download_as_zip($token, $files, $title) {
-        $zip = new ZipArchive();
-        $zip_filename = tempnam(sys_get_temp_dir(), 'sfs_zip');
-        
-        if ($zip->open($zip_filename, ZipArchive::CREATE) !== TRUE) {
-            die("Could not open archive");
+        if (!class_exists('ZipArchive')) {
+            wp_die(__('ZIP is not available on this server.', 'simple-secure-file-share'), '', array('response' => 500));
         }
 
-        $base_dir = $this->upload_dir . $token . '/';
+        $zip = new ZipArchive();
+        $zip_filename = tempnam(get_temp_dir(), 'sfs_zip');
 
-        foreach ($files as $file) {
-            $file_path = $base_dir . $file['system_name'];
-            if (file_exists($file_path)) {
-                $zip->addFile($file_path, $file['original_name']);
+        // 途中切断時も一時ファイルを確実に削除
+        ignore_user_abort(true);
+        register_shutdown_function(function () use ($zip_filename) {
+            if (is_file($zip_filename)) {
+                @unlink($zip_filename);
             }
+        });
+        
+        if ($zip->open($zip_filename, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            wp_die(__('Could not create archive.', 'simple-secure-file-share'), '', array('response' => 500));
+        }
+
+        $used = array();
+        foreach ($files as $file) {
+            $file_path = isset($file['system_name']) ? $this->resolve_share_file($token, $file['system_name']) : null;
+            if (!$file_path) {
+                continue;
+            }
+            // Zip Slip 対策: パスを含まない一意なエントリ名
+            $entry = sanitize_file_name($this->clean_original_name(isset($file['original_name']) ? $file['original_name'] : ''));
+            $info = pathinfo($entry);
+            $base = isset($info['filename']) ? $info['filename'] : 'file';
+            $ext = isset($info['extension']) ? '.' . $info['extension'] : '';
+            $n = 1;
+            while ($entry === '' || isset($used[strtolower($entry)])) {
+                $entry = $base . '_' . $n++ . $ext;
+            }
+            $used[strtolower($entry)] = true;
+            $zip->addFile($file_path, $entry);
         }
         $zip->close();
 
-        if (file_exists($zip_filename)) {
-            header('Content-Type: application/zip');
-            $download_name = rawurlencode($title . '_files.zip');
-            header("Content-Disposition: attachment; filename=\"{$download_name}\"; filename*=UTF-8''{$download_name}");
-            header('Content-Length: ' . filesize($zip_filename));
-            header('Pragma: no-cache'); 
-            header('Expires: 0'); 
-            readfile($zip_filename);
-            unlink($zip_filename);
-            exit;
+        if (!is_file($zip_filename)) {
+            wp_die(__('Could not create archive.', 'simple-secure-file-share'), '', array('response' => 500));
         }
+
+        $this->send_file($zip_filename, $title . '_files.zip', 'application/zip');
     }
 
     /**
      * フロントエンド画面のHTML
      */
-    private function render_frontend_html($title, $files, $token) {
-        $download_base = home_url('/' . $this->share_slug . '/' . $token);
+    private function render_frontend_html($title, $files, $token, $post_id) {
+        $download_base = add_query_arg('dl_token', $this->download_token($post_id, $token), home_url('/' . $this->share_slug . '/' . $token));
         
         $total_size = 0;
         foreach($files as $f) $total_size += $f['size'];
@@ -1748,7 +2056,7 @@ class Simple_File_Share {
             <span><?php _e('Download as ZIP', 'simple-secure-file-share'); ?></span>
         </a>
         <?php else: ?>
-        <a href="<?php echo esc_url(add_query_arg('download', $files[0]['system_name'], $download_base)); ?>" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
+        <a href="<?php echo esc_url(add_query_arg('download', rawurlencode($files[0]['system_name']), $download_base)); ?>" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transform hover:-translate-y-0.5 transition font-bold whitespace-nowrap">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             <span><?php _e('Download File', 'simple-secure-file-share'); ?></span>
         </a>
@@ -1757,7 +2065,8 @@ class Simple_File_Share {
         $download_btn_html = ob_get_clean();
 
         // 画像拡張子リスト
-        $image_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp');
+        // SVG はスクリプトを含み得るためプレビュー対象外
+        $image_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif');
 
         ?>
         <!DOCTYPE html>
@@ -1768,7 +2077,7 @@ class Simple_File_Share {
             <meta name="robots" content="noindex, nofollow">
             <meta name="color-scheme" content="light dark">
             <title><?php echo esc_html($title); ?> - <?php _e('File Share', 'simple-secure-file-share'); ?></title>
-            <script src="https://cdn.tailwindcss.com"></script>
+            <link rel="stylesheet" href="<?php echo esc_url(plugins_url('assets/css/tailwind.min.css', __FILE__) . '?ver=' . self::VERSION); ?>">
             <style>
                 /* CSS Variables for theming */
                 :root {
@@ -1951,8 +2260,8 @@ class Simple_File_Share {
                     <!-- List View (default) -->
                     <div id="sfs-list-view" class="sfs-file-list">
                         <?php foreach ($files as $file): 
-                            $single_url = add_query_arg('download', $file['system_name'], $download_base);
-                            $ext = strtolower(pathinfo($file['system_name'], PATHINFO_EXTENSION));
+                            $single_url = add_query_arg('download', rawurlencode($file['system_name']), $download_base);
+                            $ext = strtolower(pathinfo($file['original_name'], PATHINFO_EXTENSION));
                             $is_image = in_array($ext, $image_extensions);
                             $icon_color = 'text-gray-400';
                             if($is_image) $icon_color = 'text-purple-500';
@@ -1964,7 +2273,7 @@ class Simple_File_Share {
                             // 画像の場合はプレビューURLを生成 (AJAX経由)
                             $preview_url = '';
                             if ($is_image) {
-                                $preview_url = admin_url('admin-ajax.php') . '?action=sfs_get_image&token=' . $token . '&file=' . $file['system_name'];
+                                $preview_url = add_query_arg(array('action' => 'sfs_get_image', 'token' => $token, 'file' => rawurlencode($file['system_name'])), admin_url('admin-ajax.php'));
                             }
                         ?>
                         <div class="sfs-list-item">
@@ -1993,8 +2302,8 @@ class Simple_File_Share {
                     <!-- Grid View (hidden by default) -->
                     <div id="sfs-grid-view" class="sfs-file-grid" style="display: none;">
                         <?php foreach ($files as $file): 
-                            $single_url = add_query_arg('download', $file['system_name'], $download_base);
-                            $ext = strtolower(pathinfo($file['system_name'], PATHINFO_EXTENSION));
+                            $single_url = add_query_arg('download', rawurlencode($file['system_name']), $download_base);
+                            $ext = strtolower(pathinfo($file['original_name'], PATHINFO_EXTENSION));
                             $is_image = in_array($ext, $image_extensions);
                             $icon_color = 'text-gray-400';
                             if($is_image) $icon_color = 'text-purple-500';
@@ -2005,7 +2314,7 @@ class Simple_File_Share {
                             
                             $preview_url = '';
                             if ($is_image) {
-                                $preview_url = admin_url('admin-ajax.php') . '?action=sfs_get_image&token=' . $token . '&file=' . $file['system_name'];
+                                $preview_url = add_query_arg(array('action' => 'sfs_get_image', 'token' => $token, 'file' => rawurlencode($file['system_name'])), admin_url('admin-ajax.php'));
                             }
                         ?>
                         <div class="sfs-grid-item">
@@ -2107,8 +2416,8 @@ class Simple_File_Share {
         
         // アップロードフォルダ内のディレクトリ一覧を取得
         $upload_folders = array();
-        if (is_dir($this->upload_dir)) {
-            $dirs = glob($this->upload_dir . '*', GLOB_ONLYDIR);
+        if (is_dir($this->get_upload_dir())) {
+            $dirs = glob($this->get_upload_dir() . '*', GLOB_ONLYDIR);
             foreach ($dirs as $dir) {
                 $upload_folders[] = basename($dir);
             }
@@ -2137,7 +2446,6 @@ class Simple_File_Share {
         
         ?>
         <div class="wrap">
-            <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 .sfs-adv h1, .sfs-adv h2, .sfs-adv h3 { margin-bottom: 0.5em; font-weight: bold; }
             </style>
@@ -2270,7 +2578,7 @@ class Simple_File_Share {
                                     $files = get_post_meta($share->ID, 'sfs_files', true);
                                     $has_password = get_post_meta($share->ID, 'sfs_password_hash', true);
                                     $download_count = (int)get_post_meta($share->ID, 'sfs_download_count', true);
-                                    $folder_exists = is_dir($this->upload_dir . $token);
+                                    $folder_exists = is_dir($this->get_upload_dir() . $token);
                                 ?>
                                 <tr class="bg-white border-b hover:bg-gray-50">
                                     <td class="px-3 py-2 font-mono text-xs"><?php echo $share->ID; ?></td>
@@ -2319,7 +2627,7 @@ class Simple_File_Share {
                 <!-- アップロードフォルダのパス表示 -->
                 <div class="mt-8 p-4 bg-gray-50 rounded border">
                     <h3 class="text-sm font-bold text-gray-700 mb-2"><?php _e('Upload Folder Path', 'simple-secure-file-share'); ?></h3>
-                    <code class="text-xs bg-gray-200 p-2 rounded block break-all"><?php echo esc_html($this->upload_dir); ?></code>
+                    <code class="text-xs bg-gray-200 p-2 rounded block break-all"><?php echo esc_html($this->get_upload_dir()); ?></code>
                 </div>
             </div>
         </div>
@@ -2349,8 +2657,8 @@ class Simple_File_Share {
         }
         
         // アップロードフォルダ内のディレクトリを走査
-        if (is_dir($this->upload_dir)) {
-            $dirs = glob($this->upload_dir . '*', GLOB_ONLYDIR);
+        if (is_dir($this->get_upload_dir())) {
+            $dirs = glob($this->get_upload_dir() . '*', GLOB_ONLYDIR);
             foreach ($dirs as $dir) {
                 $folder_name = basename($dir);
                 if (!in_array($folder_name, $db_tokens)) {
@@ -2373,8 +2681,8 @@ class Simple_File_Share {
         
         // アップロードフォルダ内のディレクトリ一覧を取得
         $upload_folders = array();
-        if (is_dir($this->upload_dir)) {
-            $dirs = glob($this->upload_dir . '*', GLOB_ONLYDIR);
+        if (is_dir($this->get_upload_dir())) {
+            $dirs = glob($this->get_upload_dir() . '*', GLOB_ONLYDIR);
             foreach ($dirs as $dir) {
                 $upload_folders[] = basename($dir);
             }
@@ -2403,18 +2711,24 @@ class Simple_File_Share {
      * ディレクトリを再帰的に削除
      */
     private function delete_directory($dir) {
+        $dir = untrailingslashit($dir);
+        // シンボリックリンク先は辿らずリンク自体のみ削除
+        if (is_link($dir)) {
+            @unlink($dir);
+            return;
+        }
         if (!is_dir($dir)) return;
         
-        $files = array_diff(scandir($dir), array('.', '..'));
+        $files = array_diff(scandir($dir) ?: array(), array('.', '..'));
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
-            if (is_dir($path)) {
+            if (is_dir($path) && !is_link($path)) {
                 $this->delete_directory($path);
             } else {
-                unlink($path);
+                @unlink($path);
             }
         }
-        rmdir($dir);
+        @rmdir($dir);
     }
     
     /**
@@ -2425,7 +2739,6 @@ class Simple_File_Share {
         
         ?>
         <div class="wrap">
-            <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 .sfs-howto h1, .sfs-howto h2, .sfs-howto h3 { margin-bottom: 0.5em; font-weight: bold; }
                 .sfs-howto ul { list-style: disc; padding-left: 1.5em; }

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.0] - 2026-10-30
+
+### Security
+- Share auth cookie is now HMAC-signed with an expiry and bound to the password hash (revoked on password change); `SameSite=Lax`
+- Brute-force protection for share passwords (10 attempts / IP / share, 50 / IP, 15 min lockout)
+- Share passwords hashed with bcrypt (`password_hash`); legacy phpass hashes are re-hashed on next login; consistent trimming
+- Uploaded files stored under random `.dat` names — user-supplied names/extensions (`.php`, `.htaccess`, …) never reach the disk
+- Storage moved from the plugin folder to `wp-content/uploads/sfs-protected/` (plugin updates deleted it); automatic migration; `.htaccess` for Apache 2.2/2.4, `web.config`, `index.php`; `sfs_storage_dir` filter
+- Image preview endpoint: only files registered to the share, only raster images detected from content (SVG XSS fixed), unified auth check (password-protected previews now work for visitors), sandbox CSP, referer prefix bypass fixed
+- Download links use HMAC-signed, time-limited tokens instead of the Referer header; downloads always `attachment` with `nosniff` and sandbox CSP; ZIP entry names sanitised and de-duplicated; temp files cleaned up on abort
+- Share pages send `no-store`, `DONOTCACHEPAGE`, CSP, `X-Frame-Options`, `Referrer-Policy`, `X-Robots-Tag`
+- Removed `cdn.tailwindcss.com` script from wp-admin and public pages; Tailwind is now bundled locally (`assets/css/tailwind.min.css`)
+- Fixed DOM XSS via crafted file names in the admin upload list; `escapeHtml` now escapes quotes
+- Admin handlers verify the post type is `sfs_share` and reject path traversal
+- Password generators use `crypto.getRandomValues`
+- Japanese translation (`.mo`) rebuilt from `.po` (15 strings were missing)
+
 ## [4.0.0] - 2026-01-04
 
 ### Added

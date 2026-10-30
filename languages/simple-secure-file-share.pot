@@ -408,3 +408,31 @@ msgstr ""
 
 msgid "Please contact us via X (Twitter) or the website."
 msgstr ""
+
+#: simple-file-share.php (security)
+msgid "Title and files are required."
+msgstr ""
+
+msgid "You can upload up to %d files at once."
+msgstr ""
+
+msgid "Password is too long."
+msgstr ""
+
+msgid "Failed to create directory."
+msgstr ""
+
+msgid "Failed to save files."
+msgstr ""
+
+msgid "Too many failed attempts. Please wait 15 minutes and try again."
+msgstr ""
+
+msgid "ZIP is not available on this server."
+msgstr ""
+
+msgid "Could not create archive."
+msgstr ""
+
+msgid "File not found."
+msgstr ""

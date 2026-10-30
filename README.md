@@ -3,7 +3,7 @@
 [![GitLab](https://img.shields.io/badge/GitLab-312152?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/lichiphen/simple-secure-file-share)
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Lichiphen/simple-secure-file-share)
 
-[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://gitlab.com/lichiphen/simple-secure-file-share)
+[![Version](https://img.shields.io/badge/version-4.1.0-blue.svg)](https://gitlab.com/lichiphen/simple-secure-file-share)
 [![License](https://img.shields.io/badge/license-Proprietary-orange.svg)](./LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org)
@@ -153,7 +153,8 @@ simple-file-share/
 ├── LICENSE                   # License file
 ├── assets/                   # CSS and JavaScript files
 │   ├── css/
-│   │   └── style.css         # All styles with CSS variables
+│   │   ├── style.css         # All styles with CSS variables
+│   │   └── tailwind.min.css  # Locally built Tailwind (no CDN script)
 │   ├── js/
 │   │   └── app.js            # Frontend/Backend scripts
 │   └── images/
@@ -164,10 +165,14 @@ simple-file-share/
 │   ├── simple-secure-file-share-en_US.mo
 │   ├── simple-secure-file-share-ja.po
 │   └── simple-secure-file-share-ja.mo
-└── protected-uploads/        # Upload file storage
-    └── [token]/              # Folder for each share
-        └── [files]           # Actual files
+└── tools/tailwind/           # Tailwind build config
+
+wp-content/uploads/sfs-protected/   # Upload file storage (survives plugin updates)
+└── [token]/                        # Folder for each share
+    └── [random].dat                # Files are stored under random names
 ```
+
+> Since v4.1.0, files are stored in `wp-content/uploads/sfs-protected/` instead of the plugin folder (which WordPress deletes on every plugin update). Existing shares are migrated automatically the next time an administrator opens wp-admin. Use the `sfs_storage_dir` filter to move storage outside the web root.
 
 ---
 
@@ -207,18 +212,34 @@ The CSS follows a modular architecture using CSS Custom Properties:
 ## 🔐 Security Features
 
 ### Direct Access Prevention
-- `.htaccess` blocks external access to `protected-uploads/` folder
-- Files can only be downloaded through the plugin
+- Files are stored under random names with a `.dat` extension — the uploaded name is never used on disk, so `.php`, `.phtml`, `.htaccess` etc. can never be executed or interpreted
+- `.htaccess` (Apache 2.2 / 2.4), `web.config` (IIS) and `index.php` deny access to `wp-content/uploads/sfs-protected/`
+- **Nginx**: add the following rule (Nginx ignores `.htaccess`):
+
+```nginx
+# Nginx ignores .htaccess — add this to your server block
+# Nginx では .htaccess が無効なため server ブロックに追加してください
+location ^~ /wp-content/uploads/sfs-protected/ { deny all; return 404; }
+```
+
+- Files can only be downloaded through the plugin, always as `attachment` with `X-Content-Type-Options: nosniff` and a sandbox CSP
 
 ### Password Protection
-- Passwords are stored hashed (bcrypt encryption)
-- Cookie authentication valid for 1 hour
-- Secure password input with autocomplete prevention
+- Passwords are hashed with bcrypt (`password_hash`); legacy phpass hashes are upgraded on the next successful login
+- Authentication cookie is HMAC-signed (WordPress salts), expires after 1 hour, is `HttpOnly` / `SameSite=Lax` / `Secure` on HTTPS, and is revoked when the password changes
+- Brute-force protection: 10 failed attempts per IP per share (50 per IP overall) lock the form for 15 minutes
+- Share pages send `no-store` / `DONOTCACHEPAGE` so page-cache plugins never store unlocked content
+
+### Image Preview
+- Only registered files of the share, only raster images detected from file content (JPEG/PNG/GIF/WebP/BMP/AVIF). SVG is never served inline (it can contain scripts)
 
 ### Direct Link Prevention
-- Referer check
-- Daily token verification
-- Prevents downloads via direct URL access
+- HMAC-signed, time-limited download tokens (no longer relies on the Referer header)
+
+### Other
+- No third-party scripts: Tailwind is bundled locally (previously loaded from `cdn.tailwindcss.com`, including in wp-admin)
+- Admin handlers only operate on `sfs_share` posts; every file operation is checked against path traversal
+- Password generator uses `crypto.getRandomValues`
 
 ---
 
@@ -237,7 +258,13 @@ The plugin supports full internationalization with the following languages:
 
 See [CHANGELOG.md](./CHANGELOG.md) for full version history.
 
-### v4.0.0 (Latest)
+### v4.1.0 (Latest) — Security update
+- 🔒 Signed, revocable auth cookies, brute-force protection, bcrypt hashing
+- 🔒 Random on-disk file names, storage moved to `wp-content/uploads/sfs-protected/`
+- 🔒 SVG preview XSS fixed, admin file-name XSS fixed, Tailwind CDN removed
+- 🔒 Signed download links, no-cache headers, safe ZIP entry names
+
+### v4.0.0
 - 🌙 Added Dark Mode support
 - 🐱 Added cute error pages with cat mascot
 - 📸 Added image preview in upload form
@@ -440,7 +467,9 @@ simple-file-share/
 │   ├── simple-secure-file-share-en_US.mo
 │   ├── simple-secure-file-share-ja.po
 │   └── simple-secure-file-share-ja.mo
-└── protected-uploads/        # アップロードファイル保存先
+└── tools/tailwind/           # Tailwind ビルド設定
+
+wp-content/uploads/sfs-protected/  # アップロードファイル保存先（プラグイン更新で消えません）
     └── [token]/              # 各共有のフォルダ
         └── [files]           # 実際のファイル
 ```
@@ -483,18 +512,34 @@ CSSはCSS変数（カスタムプロパティ）を使用したモジュラー�
 ## 🔐 セキュリティ機能
 
 ### 直接アクセス防止
-- `protected-uploads/` フォルダには `.htaccess` で外部からのアクセスを遮断
-- ファイルはプラグイン経由でのみダウンロード可能
+- ファイルはランダム名＋`.dat` 拡張子で保存し、アップロード時の名前をディスク上で使わない（`.php` `.phtml` `.htaccess` 等が実行・解釈されることはありません）
+- `wp-content/uploads/sfs-protected/` は `.htaccess`（Apache 2.2/2.4）・`web.config`（IIS）・`index.php` でアクセスを遮断
+- **Nginx** の場合は以下を追加してください（Nginx は `.htaccess` を読みません）:
+
+```nginx
+# Nginx ignores .htaccess — add this to your server block
+# Nginx では .htaccess が無効なため server ブロックに追加してください
+location ^~ /wp-content/uploads/sfs-protected/ { deny all; return 404; }
+```
+
+- ダウンロードはプラグイン経由のみ。常に `attachment`・`X-Content-Type-Options: nosniff`・sandbox CSP 付き
 
 ### パスワード保護
-- パスワードはbcryptで暗号化（ハッシュ化）して保存
-- Cookie認証により1時間有効
-- オートコンプリート防止機能付きの安全なパスワード入力
+- パスワードは bcrypt（`password_hash`）でハッシュ化。旧形式（phpass）は次回ログイン成功時に自動で再ハッシュ
+- 認証CookieはWordPressのソルトでHMAC署名、1時間で失効、`HttpOnly` / `SameSite=Lax` / HTTPS時 `Secure`。パスワード変更で即失効
+- 総当たり対策: 同一IP・同一共有で10回（IP全体で50回）失敗すると15分間ロック
+- 共有ページは `no-store` / `DONOTCACHEPAGE` を送出し、キャッシュ系プラグインに認証後の内容を保存させません
+
+### 画像プレビュー
+- 共有に登録されたファイルのみ、中身から判定したラスター画像（JPEG/PNG/GIF/WebP/BMP/AVIF）のみ配信。SVG はスクリプトを含み得るためインライン配信しません
 
 ### 直リンク防止
-- リファラーチェック
-- 日次トークン検証
-- ブラウザでURL直叩きによるダウンロードを防止
+- 有効期限付きのHMAC署名ダウンロードトークン（Referer に依存しません）
+
+### その他
+- 外部スクリプトなし: Tailwind をローカルに同梱（従来は管理画面を含め `cdn.tailwindcss.com` から読み込み）
+- 管理用ハンドラは `sfs_share` 投稿のみを操作、すべてのファイル操作でパストラバーサルを検査
+- パスワード生成は `crypto.getRandomValues` を使用
 
 ---
 
@@ -513,7 +558,13 @@ CSSはCSS変数（カスタムプロパティ）を使用したモジュラー�
 
 詳細なバージョン履歴は[CHANGELOG.md](./CHANGELOG.md)をご覧ください。
 
-### v4.0.0（最新）
+### v4.1.0（最新）— セキュリティアップデート
+- 🔒 署名付き・失効可能な認証Cookie、総当たり対策、bcrypt ハッシュ
+- 🔒 ランダムな保存ファイル名、保存先を `wp-content/uploads/sfs-protected/` に変更
+- 🔒 SVGプレビューのXSS、管理画面のファイル名XSSを修正、Tailwind CDN を廃止
+- 🔒 署名付きダウンロードリンク、キャッシュ無効化ヘッダー、安全なZIPエントリ名
+
+### v4.0.0
 - 🌙 ダークモード対応を追加
 - 🐱 猫マスコット付き可愛いエラーページを追加
 - 📸 アップロードフォームに画像プレビュー機能を追加

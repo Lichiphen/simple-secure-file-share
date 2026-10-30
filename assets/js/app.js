@@ -1,6 +1,6 @@
 /**
  * Simple Secure File Share - WordPress Plugin JavaScript
- * Version: 4.0.0
+ * Version: 4.1.0
  */
 
 (function() {
@@ -11,6 +11,25 @@
     // ============================================
     
     let allFiles = [];
+
+    // 暗号学的に安全な乱数（偏りなし）
+    function secureRandomInt(max) {
+        const limit = Math.floor(0x100000000 / max) * max;
+        const buf = new Uint32Array(1);
+        do {
+            window.crypto.getRandomValues(buf);
+        } while (buf[0] >= limit);
+        return buf[0] % max;
+    }
+
+    function secureShuffle(str) {
+        const arr = str.split('');
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = secureRandomInt(i + 1);
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr.join('');
+    }
     let currentView = 'list'; // 'list' or 'grid'
     let currentSort = { column: 'name', direction: 'asc' };
 
@@ -28,7 +47,11 @@
         const iconColor = type === 'success' ? '#4ade80' : type === 'error' ? '#f87171' : '#fbbf24';
         const icon = type === 'success' ? 'dashicons-yes' : type === 'error' ? 'dashicons-no' : 'dashicons-warning';
         
-        toast.innerHTML = `<span class="dashicons ${icon}" style="color:${iconColor};"></span> ${message}`;
+        const iconEl = document.createElement('span');
+        iconEl.className = 'dashicons ' + icon;
+        iconEl.style.color = iconColor;
+        toast.appendChild(iconEl);
+        toast.appendChild(document.createTextNode(' ' + String(message)));
         document.body.appendChild(toast);
 
         setTimeout(() => {
@@ -122,18 +145,18 @@
     // ============================================
     
     window.sfsGeneratePassword = function() {
-        const length = 12;
+        const length = 16;
         const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
         let retVal = "";
         const types = ["abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789", "!@#$%^&*()_+"];
         
         types.forEach(t => {
-            retVal += t.charAt(Math.floor(Math.random() * t.length));
+            retVal += t.charAt(secureRandomInt(t.length));
         });
         for (let i = 0; i < length - types.length; ++i) {
-            retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+            retVal += charset.charAt(secureRandomInt(charset.length));
         }
-        retVal = retVal.split('').sort(() => 0.5 - Math.random()).join('');
+        retVal = secureShuffle(retVal);
 
         const input = document.getElementById('sfs-password-input');
         const toggleBtn = document.getElementById('sfs-toggle-password');
@@ -287,7 +310,7 @@
                 
                 let previewHtml;
                 if (isImage && file.preview) {
-                    previewHtml = `<img src="${file.preview}" alt="${escapeHtml(file.name)}">`;
+                    previewHtml = `<img src="${escapeHtml(file.preview)}" alt="${escapeHtml(file.name)}">`;
                 } else {
                     previewHtml = `<span class="dashicons ${icon} sfs-file-icon-large" style="color: ${color};"></span>`;
                 }
@@ -315,7 +338,7 @@
                 
                 let previewHtml;
                 if (isImage && file.preview) {
-                    previewHtml = `<img src="${file.preview}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;">`;
+                    previewHtml = `<img src="${escapeHtml(file.preview)}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;">`;
                 } else {
                     previewHtml = `<span class="dashicons ${icon}" style="color: ${color}; font-size: 24px; width: 24px; height: 24px;"></span>`;
                 }
@@ -338,9 +361,8 @@
     };
 
     function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        // 属性値でも安全なよう引用符もエスケープする
+        return String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
     // ============================================

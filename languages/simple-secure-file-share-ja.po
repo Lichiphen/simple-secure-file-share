@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Simple Secure File Share 3.1.1\n"
+"Project-Id-Version: Simple Secure File Share 4.1.0\n"
 "Report-Msgid-Bugs-To: https://lichiphen.com\n"
 "POT-Creation-Date: 2025-12-08 02:10:00+0900\n"
 "PO-Revision-Date: 2025-12-08 02:10:00+0900\n"
@@ -460,3 +460,31 @@ msgstr "著作権表示をどうしても削除したい場合は、有償にて
 
 msgid "Please contact us via X (Twitter) or the website."
 msgstr "X (Twitter)またはウェブサイトよりお問い合わせください。"
+
+#: simple-file-share.php (security)
+msgid "Title and files are required."
+msgstr "タイトルとファイルは必須です。"
+
+msgid "You can upload up to %d files at once."
+msgstr "一度にアップロードできるファイルは%d個までです。"
+
+msgid "Password is too long."
+msgstr "パスワードが長すぎます。"
+
+msgid "Failed to create directory."
+msgstr "ディレクトリ作成に失敗しました。"
+
+msgid "Failed to save files."
+msgstr "ファイルの保存に失敗しました。"
+
+msgid "Too many failed attempts. Please wait 15 minutes and try again."
+msgstr "試行回数が上限を超えました。15分ほど待ってから再度お試しください。"
+
+msgid "ZIP is not available on this server."
+msgstr "このサーバーではZIPを作成できません。"
+
+msgid "Could not create archive."
+msgstr "アーカイブを作成できませんでした。"
+
+msgid "File not found."
+msgstr "ファイルが見つかりません。"
