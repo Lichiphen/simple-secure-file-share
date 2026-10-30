@@ -21,6 +21,9 @@
 
 When an administrator uploads files, a dedicated sharing URL is generated. Files are protected from direct access and include features such as password protection, download counting, and ZIP downloads.
 
+> [!NOTE]
+> **Security status (as of 2026-10-30):** v4.1.0 fixes every security issue identified up to 2026-10-30 and keeps security risks low — signed and revocable share cookies, password attempt limits, random on-disk file names, SVG preview blocking, signed download links and no external scripts. This is not a guarantee that no vulnerabilities exist; keep the plugin, WordPress and PHP up to date.
+
 ---
 
 ## ✨ Features
@@ -172,7 +175,7 @@ wp-content/uploads/sfs-protected/   # Upload file storage (survives plugin updat
     └── [random].dat                # Files are stored under random names
 ```
 
-> Since v4.1.0, files are stored in `wp-content/uploads/sfs-protected/` instead of the plugin folder (which WordPress deletes on every plugin update). Existing shares are migrated automatically the next time an administrator opens wp-admin. Use the `sfs_storage_dir` filter to move storage outside the web root.
+> Since v4.1.0, files are stored in `wp-content/uploads/sfs-protected/` instead of the plugin folder (which WordPress deletes on every plugin update). Existing shares are migrated automatically the first time they are opened or an administrator opens wp-admin. Use the `sfs_storage_dir` filter to move storage outside the web root.
 
 ---
 
@@ -318,6 +321,9 @@ Copyright (c) 2025-2026 Lichiphen. All rights reserved.
 「Simple Secure File Share」は、WordPressサイトでファイルを安全に共有するためのプラグインです。
 
 管理者がファイルをアップロードすると、専用の共有URLが発行されます。ファイルは直接アクセスから保護され、パスワード保護、ダウンロード回数のカウント、ZIPダウンロードなどの機能を備えています。
+
+> [!NOTE]
+> **セキュリティ対策の状況（2026-10-30 時点）:** v4.1.0 では、2026-10-30 までに確認したセキュリティ上の問題をすべて修正し、セキュリティリスクを抑えています。共有 Cookie の署名と失効、パスワード試行回数の制限、ランダムな保存ファイル名、SVG プレビューの拒否、署名付きダウンロードリンク、外部スクリプトの不使用などに対応しています。脆弱性が一切ないことを保証するものではないため、プラグイン・WordPress・PHP は最新版でお使いください。
 
 ---
 
