@@ -19,6 +19,12 @@ All notable changes to this project will be documented in this file.
 - Password generators use `crypto.getRandomValues`
 - Japanese translation (`.mo`) rebuilt from `.po` (15 strings were missing)
 
+### Fixed
+- Legacy shares are migrated on first access, so their downloads and previews keep working before an administrator opens wp-admin
+- Downloads, previews and ZIP failed on Windows hosts (path check compared `realpath()` output against `/`)
+- How-to page showed version 4.0.0 and described the old `protected-uploads/` folder and Referer check
+- Edit / Delete buttons in the share list no longer wrap in Japanese
+
 ## [4.0.0] - 2026-01-04
 
 ### Added

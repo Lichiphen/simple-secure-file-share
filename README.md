@@ -264,6 +264,9 @@ See [CHANGELOG.md](./CHANGELOG.md) for full version history.
 - 🔒 SVG preview XSS fixed, admin file-name XSS fixed, Tailwind CDN removed
 - 🔒 Signed download links, no-cache headers, safe ZIP entry names
 
+> [!WARNING]
+> **Updating from v4.0.0 or earlier:** files of existing shares are still in the plugin folder (`protected-uploads/`). Updating with **Plugins → Add New → Upload Plugin → "Replace current with uploaded"** (or any automatic update) deletes the old plugin folder, and those files with it. Either overwrite the plugin files via FTP/SFTP (the folder is moved to `wp-content/uploads/sfs-protected/` automatically), or back up `protected-uploads/` first and copy its token folders into `wp-content/uploads/sfs-protected/` after the update.
+
 ### v4.0.0
 - 🌙 Added Dark Mode support
 - 🐱 Added cute error pages with cat mascot
@@ -563,6 +566,9 @@ location ^~ /wp-content/uploads/sfs-protected/ { deny all; return 404; }
 - 🔒 ランダムな保存ファイル名、保存先を `wp-content/uploads/sfs-protected/` に変更
 - 🔒 SVGプレビューのXSS、管理画面のファイル名XSSを修正、Tailwind CDN を廃止
 - 🔒 署名付きダウンロードリンク、キャッシュ無効化ヘッダー、安全なZIPエントリ名
+
+> [!WARNING]
+> **v4.0.0 以前からの更新について:** 既存の共有ファイルはプラグインフォルダ内（`protected-uploads/`）にあります。**「プラグイン → 新規追加 → プラグインのアップロード →『アップロードしたもので現在のものを置き換える』」**や自動更新で更新すると、旧プラグインフォルダごとファイルが削除されます。FTP/SFTP でプラグインのファイルを上書きするか（フォルダは `wp-content/uploads/sfs-protected/` へ自動で移動します）、更新前に `protected-uploads/` をバックアップし、更新後にその中のトークン名のフォルダを `wp-content/uploads/sfs-protected/` へコピーしてください。
 
 ### v4.0.0
 - 🌙 ダークモード対応を追加

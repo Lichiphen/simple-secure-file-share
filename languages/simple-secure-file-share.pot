@@ -364,7 +364,7 @@ msgstr ""
 msgid "Direct Access Prevention:"
 msgstr ""
 
-msgid "The protected-uploads/ folder cannot be accessed externally"
+msgid "Files are stored under wp-content/uploads/sfs-protected/ with random names and cannot be accessed directly"
 msgstr ""
 
 msgid "Password Encryption:"
@@ -379,10 +379,10 @@ msgstr ""
 msgid "Password authentication is valid for 1 hour"
 msgstr ""
 
-msgid "Referer Check:"
+msgid "Signed Download Links:"
 msgstr ""
 
-msgid "Prevents downloads from outside the share page"
+msgid "Download links are signed and expire after about 1 hour"
 msgstr ""
 
 msgid "License"

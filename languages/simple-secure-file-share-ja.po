@@ -416,8 +416,8 @@ msgstr "セキュリティ機能"
 msgid "Direct Access Prevention:"
 msgstr "直接アクセス防止："
 
-msgid "The protected-uploads/ folder cannot be accessed externally"
-msgstr "protected-uploads/ フォルダには外部からアクセスできません"
+msgid "Files are stored under wp-content/uploads/sfs-protected/ with random names and cannot be accessed directly"
+msgstr "ファイルは wp-content/uploads/sfs-protected/ にランダムな名前で保存され、直接アクセスできません"
 
 msgid "Password Encryption:"
 msgstr "パスワード暗号化："
@@ -431,11 +431,11 @@ msgstr "Cookie認証："
 msgid "Password authentication is valid for 1 hour"
 msgstr "パスワード認証は1時間有効"
 
-msgid "Referer Check:"
-msgstr "リファラーチェック："
+msgid "Signed Download Links:"
+msgstr "署名付きダウンロードリンク："
 
-msgid "Prevents downloads from outside the share page"
-msgstr "共有ページ以外からのダウンロードを防止"
+msgid "Download links are signed and expire after about 1 hour"
+msgstr "ダウンロードリンクは署名付きで、約1時間で失効します"
 
 msgid "License"
 msgstr "ライセンス"

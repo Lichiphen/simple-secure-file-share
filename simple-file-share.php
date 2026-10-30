@@ -190,11 +190,7 @@ class Simple_File_Share {
 
         $dirs = glob($legacy . '*', GLOB_ONLYDIR) ?: array();
         foreach ($dirs as $dir) {
-            $name = basename($dir);
-            $target = $this->get_upload_dir() . $name;
-            if ($this->is_valid_token($name) && !file_exists($target) && !is_link($dir)) {
-                @rename($dir, $target);
-            }
+            $this->migrate_legacy_share(basename($dir));
         }
 
         // 移行完了後、旧フォルダが空なら削除
@@ -204,6 +200,20 @@ class Simple_File_Share {
             @unlink($legacy . 'index.php');
             @rmdir($legacy);
         }
+    }
+
+    /**
+     * 旧保存先から1共有分のフォルダを移動
+     * 管理画面を開く前に閲覧された共有も、ファイル参照時にここで移行する
+     */
+    private function migrate_legacy_share($token) {
+        $source = $this->legacy_upload_dir . $token;
+        $target = $this->get_upload_dir() . $token;
+        if (!$this->is_valid_token($token) || !is_dir($source) || is_link($source) || file_exists($target)) {
+            return false;
+        }
+        $this->ensure_storage_protection();
+        return @rename($source, $target);
     }
 
     /**
@@ -221,12 +231,17 @@ class Simple_File_Share {
             || $system_name[0] === '.' || strpbrk($system_name, "/\\\0") !== false || basename($system_name) !== $system_name) {
             return null;
         }
+        if (!is_dir($this->get_upload_dir() . $token)) {
+            $this->migrate_legacy_share($token);
+        }
         $base = realpath($this->get_upload_dir() . $token);
         $path = realpath($this->get_upload_dir() . $token . '/' . $system_name);
         if ($base === false || $path === false || !is_file($path)) {
             return null;
         }
-        return strpos($path, trailingslashit($base)) === 0 ? $path : null;
+        // realpath() は OS の区切り文字を返す（Windows では "\"）
+        $base = rtrim($base, '/\\') . DIRECTORY_SEPARATOR;
+        return strpos($path, $base) === 0 ? $path : null;
     }
 
     /**
@@ -1052,7 +1067,7 @@ class Simple_File_Share {
                                     <td class="px-4 py-4 whitespace-nowrap"><?php echo get_the_date('Y/m/d H:i', $share->ID); ?></td>
                                     <td class="px-4 py-4">
                                         <div class="flex items-center justify-center gap-3">
-                                            <button type="button" onclick="openEditModal(<?php echo $share->ID; ?>, '<?php echo esc_js($share->post_title); ?>')" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition" title="<?php esc_attr_e('Edit', 'simple-secure-file-share'); ?>">
+                                            <button type="button" onclick="openEditModal(<?php echo $share->ID; ?>, '<?php echo esc_js($share->post_title); ?>')" class="inline-flex items-center whitespace-nowrap px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition" title="<?php esc_attr_e('Edit', 'simple-secure-file-share'); ?>">
                                                 <span class="dashicons dashicons-edit" style="font-size:14px;width:14px;height:14px;margin-right:4px;"></span>
                                                 <?php _e('Edit', 'simple-secure-file-share'); ?>
                                             </button>
@@ -1060,7 +1075,7 @@ class Simple_File_Share {
                                                 <input type="hidden" name="action" value="sfs_delete_share">
                                                 <input type="hidden" name="share_id" value="<?php echo $share->ID; ?>">
                                                 <?php wp_nonce_field('sfs_delete_nonce', 'sfs_nonce'); ?>
-                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition" title="<?php esc_attr_e('Delete', 'simple-secure-file-share'); ?>">
+                                                <button type="submit" class="inline-flex items-center whitespace-nowrap px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition" title="<?php esc_attr_e('Delete', 'simple-secure-file-share'); ?>">
                                                     <span class="dashicons dashicons-trash" style="font-size:14px;width:14px;height:14px;margin-right:4px;"></span>
                                                     <?php _e('Delete', 'simple-secure-file-share'); ?>
                                                 </button>
@@ -2755,7 +2770,7 @@ class Simple_File_Share {
                 
                 <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <p class="text-blue-800">
-                        <strong><?php _e('Version:', 'simple-secure-file-share'); ?></strong> 4.0.0 | 
+                        <strong><?php _e('Version:', 'simple-secure-file-share'); ?></strong> <?php echo esc_html(self::VERSION); ?> | 
                         <strong><?php _e('Author:', 'simple-secure-file-share'); ?></strong> AI Generator, Direction：Lichiphen（<a href="https://x.com/Lichiphen" target="_blank" class="text-blue-600 hover:underline">@Lichiphen</a>）
                     </p>
                 </div>
@@ -2883,10 +2898,10 @@ class Simple_File_Share {
                         <?php _e('Security Features', 'simple-secure-file-share'); ?>
                     </h2>
                     <ul class="mt-4 text-gray-600">
-                        <li><strong><?php _e('Direct Access Prevention:', 'simple-secure-file-share'); ?></strong> <?php _e('The protected-uploads/ folder cannot be accessed externally', 'simple-secure-file-share'); ?></li>
+                        <li><strong><?php _e('Direct Access Prevention:', 'simple-secure-file-share'); ?></strong> <?php _e('Files are stored under wp-content/uploads/sfs-protected/ with random names and cannot be accessed directly', 'simple-secure-file-share'); ?></li>
                         <li><strong><?php _e('Password Encryption:', 'simple-secure-file-share'); ?></strong> <?php _e('Passwords are stored hashed', 'simple-secure-file-share'); ?></li>
                         <li><strong><?php _e('Cookie Authentication:', 'simple-secure-file-share'); ?></strong> <?php _e('Password authentication is valid for 1 hour', 'simple-secure-file-share'); ?></li>
-                        <li><strong><?php _e('Referer Check:', 'simple-secure-file-share'); ?></strong> <?php _e('Prevents downloads from outside the share page', 'simple-secure-file-share'); ?></li>
+                        <li><strong><?php _e('Signed Download Links:', 'simple-secure-file-share'); ?></strong> <?php _e('Download links are signed and expire after about 1 hour', 'simple-secure-file-share'); ?></li>
                     </ul>
                 </section>
                 
