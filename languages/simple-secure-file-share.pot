@@ -364,7 +364,7 @@ msgstr ""
 msgid "Direct Access Prevention:"
 msgstr ""
 
-msgid "The protected-uploads/ folder cannot be accessed externally"
+msgid "Files are stored under wp-content/uploads/sfs-protected/ with random names and cannot be accessed directly"
 msgstr ""
 
 msgid "Password Encryption:"
@@ -379,10 +379,10 @@ msgstr ""
 msgid "Password authentication is valid for 1 hour"
 msgstr ""
 
-msgid "Referer Check:"
+msgid "Signed Download Links:"
 msgstr ""
 
-msgid "Prevents downloads from outside the share page"
+msgid "Download links are signed and expire after about 1 hour"
 msgstr ""
 
 msgid "License"
@@ -407,4 +407,32 @@ msgid "If you absolutely need to remove the copyright notice, we can arrange thi
 msgstr ""
 
 msgid "Please contact us via X (Twitter) or the website."
+msgstr ""
+
+#: simple-file-share.php (security)
+msgid "Title and files are required."
+msgstr ""
+
+msgid "You can upload up to %d files at once."
+msgstr ""
+
+msgid "Password is too long."
+msgstr ""
+
+msgid "Failed to create directory."
+msgstr ""
+
+msgid "Failed to save files."
+msgstr ""
+
+msgid "Too many failed attempts. Please wait 15 minutes and try again."
+msgstr ""
+
+msgid "ZIP is not available on this server."
+msgstr ""
+
+msgid "Could not create archive."
+msgstr ""
+
+msgid "File not found."
 msgstr ""
